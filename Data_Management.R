@@ -1,0 +1,180 @@
+library (readr)
+library (dplyr)
+
+#Creating the inputs
+
+varsDisease = c(
+  "Chlamydia" = "Chlamydia",
+  "Gonorrhea" = "Gonorrhea",
+  "Primary and Secondary Syphilis" = "Primary and Secondary Syphilis",
+  "All" = "All"
+)
+
+varsGender = c(
+  "Male" = "Male",
+  "Female" = "Female",
+  "All" = "All"
+)
+
+varsAge = c(
+  "0-14 years" = "0-14",
+  "15-19 years" = "15-19",
+  "20-24 years" = "20-24",
+  "25-29 years" = "25-29",
+  "30-34 years" = "30-34",
+  "35-39 years" = "35-39",
+  "More than 40 years" = "40+",
+  "All" = "All"
+)
+
+varsEthnia = c(
+  "American Indian or Alaska Native" = "American Indian",
+  "Asian or Pacific Islander" = "Asian",
+  "Black or African American" = "African American",
+  "Hispanic" = "Hispanic" , 
+  "White" = "White"
+)
+
+#Importing STD data
+
+ChlamydiaF <- read_delim("data/ChlamydiaF.txt", 
+                              "\t", escape_double = FALSE, col_types = cols(Age = col_character(), 
+                                                                            `Age Code` = col_character(), Disease = col_character(), 
+                                                                            `Disease Code` = col_skip(), Notes = col_skip(), 
+                                                                            Population = col_integer(), `Race/Ethnicity` = col_character(), 
+                                                                            `Race/Ethnicity Code` = col_skip(), 
+                                                                            Rate = col_skip(), `STD Cases` = col_integer(), 
+                                                                            State = col_character(), `State Code` = col_skip(), 
+                                                                            Year = col_integer(), `Year Code` = col_skip()), 
+                        trim_ws = TRUE)
+
+ChlamydiaF = ChlamydiaF %>% mutate(Gender = "Female", Gender_Code = "F")
+
+
+ChlamydiaM <- read_delim("data/ChlamydiaM.txt", 
+                         "\t", escape_double = FALSE, col_types = cols(Age = col_character(), 
+                                                                       `Age Code` = col_character(), Disease = col_character(), 
+                                                                       `Disease Code` = col_skip(), Notes = col_skip(), 
+                                                                       Population = col_integer(), `Race/Ethnicity` = col_character(), 
+                                                                       `Race/Ethnicity Code` = col_skip(), 
+                                                                       Rate = col_skip(), `STD Cases` = col_integer(), 
+                                                                       State = col_character(), `State Code` = col_skip(), 
+                                                                       Year = col_integer(), `Year Code` = col_skip()), 
+                        trim_ws = TRUE)
+
+ChlamydiaM = ChlamydiaM %>% mutate(Gender = "Male", Gender_Code = "M")
+
+
+ChlamydiaU <- read_delim("data/ChlamydiaU.txt", 
+                         "\t", escape_double = FALSE, col_types = cols(Age = col_character(), 
+                                                                       `Age Code` = col_character(), Disease = col_character(), 
+                                                                       `Disease Code` = col_skip(), Notes = col_skip(), 
+                                                                       Population = col_integer(), `Race/Ethnicity` = col_character(), 
+                                                                       `Race/Ethnicity Code` = col_skip(), 
+                                                                       Rate = col_skip(), `STD Cases` = col_integer(), 
+                                                                       State = col_character(), `State Code` = col_skip(), 
+                                                                       Year = col_integer(), `Year Code` = col_skip()), 
+                        trim_ws = TRUE)
+
+ChlamydiaU = ChlamydiaU %>% mutate(Gender = "Unknown", Gender_Code = "U")
+
+
+GonorrheaF <- read_delim("data/GonorrheaF.txt", 
+                         "\t", escape_double = FALSE, col_types = cols(Age = col_character(), 
+                                                                       `Age Code` = col_character(), Disease = col_character(), 
+                                                                       `Disease Code` = col_skip(), Notes = col_skip(), 
+                                                                       Population = col_integer(), `Race/Ethnicity` = col_character(), 
+                                                                       `Race/Ethnicity Code` = col_skip(), 
+                                                                       Rate = col_skip(), `STD Cases` = col_integer(), 
+                                                                       State = col_character(), `State Code` = col_skip(), 
+                                                                       Year = col_integer(), `Year Code` = col_skip()), 
+                         trim_ws = TRUE)
+
+GonorrheaF = GonorrheaF %>% mutate(Gender = "Female", Gender_Code = "F")
+
+
+GonorrheaM <- read_delim("data/GonorrheaM.txt", 
+                         "\t", escape_double = FALSE, col_types = cols(Age = col_character(), 
+                                                                       `Age Code` = col_character(), Disease = col_character(), 
+                                                                       `Disease Code` = col_skip(), Notes = col_skip(), 
+                                                                       Population = col_integer(), `Race/Ethnicity` = col_character(), 
+                                                                       `Race/Ethnicity Code` = col_skip(), 
+                                                                       Rate = col_skip(), `STD Cases` = col_integer(), 
+                                                                       State = col_character(), `State Code` = col_skip(), 
+                                                                       Year = col_integer(), `Year Code` = col_skip()), 
+                         trim_ws = TRUE)
+
+GonorrheaM = GonorrheaM %>% mutate(Gender = "Male", Gender_Code = "M")
+
+
+GonorrheaU <- read_delim("data/GonorrheaU.txt", 
+                         "\t", escape_double = FALSE, col_types = cols(Age = col_character(), 
+                                                                       `Age Code` = col_character(), Disease = col_character(), 
+                                                                       `Disease Code` = col_skip(), Notes = col_skip(), 
+                                                                       Population = col_integer(), `Race/Ethnicity` = col_character(), 
+                                                                       `Race/Ethnicity Code` = col_skip(), 
+                                                                       Rate = col_skip(), `STD Cases` = col_integer(), 
+                                                                       State = col_character(), `State Code` = col_skip(), 
+                                                                       Year = col_integer(), `Year Code` = col_skip()), 
+                         trim_ws = TRUE)
+
+GonorrheaU = GonorrheaU %>% mutate(Gender = "Unknown", Gender_Code = "U")
+
+
+SyphilisF <- read_delim("data/SyphilisF.txt", 
+                         "\t", escape_double = FALSE, col_types = cols(Age = col_character(), 
+                                                                       `Age Code` = col_character(), Disease = col_character(), 
+                                                                       `Disease Code` = col_skip(), Notes = col_skip(), 
+                                                                       Population = col_integer(), `Race/Ethnicity` = col_character(), 
+                                                                       `Race/Ethnicity Code` = col_skip(), 
+                                                                       Rate = col_skip(), `STD Cases` = col_integer(), 
+                                                                       State = col_character(), `State Code` = col_skip(), 
+                                                                       Year = col_integer(), `Year Code` = col_skip()), 
+                         trim_ws = TRUE)
+
+SyphilisF = SyphilisF %>% mutate(Gender = "Female", Gender_Code = "F")
+
+
+SyphilisM <- read_delim("data/SyphilisM.txt", 
+                        "\t", escape_double = FALSE, col_types = cols(Age = col_character(), 
+                                                                      `Age Code` = col_character(), Disease = col_character(), 
+                                                                      `Disease Code` = col_skip(), Notes = col_skip(), 
+                                                                      Population = col_integer(), `Race/Ethnicity` = col_character(), 
+                                                                      `Race/Ethnicity Code` = col_skip(), 
+                                                                      Rate = col_skip(), `STD Cases` = col_integer(), 
+                                                                      State = col_character(), `State Code` = col_skip(), 
+                                                                      Year = col_integer(), `Year Code` = col_skip()), 
+                        trim_ws = TRUE)
+
+SyphilisM = SyphilisM %>% mutate(Gender = "Male", Gender_Code = "M")
+
+
+SyphilisU <- read_delim("data/SyphilisU.txt", 
+                        "\t", escape_double = FALSE, col_types = cols(Age = col_character(), 
+                                                                      `Age Code` = col_character(), Disease = col_character(), 
+                                                                      `Disease Code` = col_skip(), Notes = col_skip(), 
+                                                                      Population = col_integer(), `Race/Ethnicity` = col_character(), 
+                                                                      `Race/Ethnicity Code` = col_skip(), 
+                                                                      Rate = col_skip(), `STD Cases` = col_integer(), 
+                                                                      State = col_character(), `State Code` = col_skip(), 
+                                                                      Year = col_integer(), `Year Code` = col_skip()), 
+                        trim_ws = TRUE)
+
+SyphilisU = SyphilisU %>% mutate(Gender = "Unknown",Gender_Code = "U")
+
+
+#Combining all the data in one DT for the map
+STD = bind_rows (ChlamydiaF, ChlamydiaM, ChlamydiaU, GonorrheaF, GonorrheaM, GonorrheaU, SyphilisF, SyphilisM, SyphilisU)
+
+rm (ChlamydiaF, ChlamydiaM, ChlamydiaU, GonorrheaF, GonorrheaM, GonorrheaU, SyphilisF, SyphilisM, SyphilisU) #Closing the old tables
+colnames (STD) = c("Disease", "State", "Year", "Race/Ethnicity", "Age", "Age_Code", "STD_Cases", "Population", "Gender", "Gender_Code")
+
+#Janitoring the data
+
+temp = which (is.na(STD$"Population"))
+
+if (length(temp) != 0) #Vérifiyng that the vector isn't empty
+{STD = STD[-c(temp),]}
+
+write.csv(STD, "STD.csv")
+saveRDS(STD, "STD.rds")
