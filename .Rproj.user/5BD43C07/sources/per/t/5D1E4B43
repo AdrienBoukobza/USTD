@@ -1,0 +1,23 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1547290322278.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "222948116",
+    "id" : "5D1E4B43",
+    "lastKnownWriteTime" : 1547410578,
+    "last_content_update" : 1547410578691,
+    "path" : "F://DescarteSTD/Tests.R",
+    "project_path" : "Tests.R",
+    "properties" : {
+        "cursorPosition" : "133,0",
+        "scrollLine" : "0",
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 5,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}
