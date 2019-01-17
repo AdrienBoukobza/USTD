@@ -29,12 +29,11 @@ ui <- fluidPage(
                                      selectInput ("gender", "Gender", varsGender),
                                      sliderInput("year", "Year:",
                                                  min = 1996, max = 2014,
-                                                 value = 2000, animate =
-                                                   animationOptions(interval = 2000, loop = TRUE)),
+                                                 value = 1996, animate =
+                                                   animationOptions(interval = 1200, loop = FALSE)),
                                      selectInput ("age", "Age class", varsAge)
                                      
-                       ),
-                       actionButton("savemap", "Save map")
+                       )
              ),
              
              tabPanel("Clinics explorer"),
@@ -76,50 +75,61 @@ ui <- fluidPage(
 server <- function(input, output, session) {
   
   output$map = renderLeaflet ({
+    states <- geojsonio::geojson_read("geojson/us-states.json", what = "sp")
+    m <- leaflet(states) %>%
+      setView(-96, 37.8, 4) %>%
+      addProviderTiles("MapBox", options = providerTileOptions(
+        id = "mapbox.light",
+        accessToken = Sys.getenv('MAPBOX_ACCESS_TOKEN'))) %>% addTiles()
+  })
+  
+  observe({
     
     #Creating a copy to work on
     
-    allDiseaseWork = allDisease
+    STD1 = STD
     
     #Filtering data, preventing the analyzer to filter the "All" Option.
     
     if(input$disease == "All") {}
     else
     {
-      allDiseaseWork = allDiseaseWork %>% filter(Disease == input$disease)
+      STD1 = STD1 %>% filter(Disease == input$disease)
     }
     
     if(input$gender == "All"){}
     else
     {
-      allDiseaseWork = allDiseaseWork %>% filter(Gender == input$gender)
+      STD1 = STD1 %>% filter(Gender == input$gender)
     }
     
     if(input$age == "All"){}
     else
     {
-      allDiseaseWork = allDiseaseWork %>% filter(Age_Code == input$age)
+      STD1 = STD1 %>% filter(Age_Code == input$age)
     }
     
-    allDiseaseWork = allDiseaseWork %>% filter (Year == input$year)
+    STD1 = STD1 %>% filter (Year == input$year)
     
     # Creating two new DT : one to summarise the cases and one to summarise the population
-    allDiseaseWorkCases = allDiseaseWork %>% group_by(State) %>% summarise(STD_Cases = sum(STD_Cases))
-    allDiseaseWorkPop = allDiseaseWork %>% group_by(State) %>% summarise (Population = sum(Population))
+    STD1Cases = STD1 %>% group_by(State) %>% summarise(STD_Cases = sum(STD_Cases))
+    STD1Pop = STD1 %>% group_by(State) %>% summarise (Population = sum(Population))
     
     #Setting the old work as the new base for the cases
-    allDiseaseWork = allDiseaseWorkCases
-    rm(allDiseaseWorkCases)
+    STD1 = STD1Cases
+    rm(STD1Cases)
     
     #Creating the rates in the working table
-    allDiseaseWork = allDiseaseWork %>% mutate (RateCalc = allDiseaseWork$STD_Cases * 1000 / allDiseaseWorkPop$Population)
-    rm(allDiseaseWorkPop)
+    STD1 = STD1 %>% mutate (RateCalc = STD1$STD_Cases * 1000 / STD1Pop$Population)
+    rm(STD1Pop)
     
     
     #Creating two lists : one with all the names of the states and one with our selection's
     
+    states <- geojsonio::geojson_read("geojson/us-states.json", what = "sp")
+    
     temp = states$name
-    temp2 = allDiseaseWork$State
+    temp2 = STD1$State
     
     #Initializing the 3 variables used in the loop
     i=1 #Representing the position in the states list
@@ -131,13 +141,13 @@ server <- function(input, output, session) {
       if(!is.na(temp [i] == temp2[j])) { #Avoid the error with NA values
         if (temp [i] == temp2[j])
         {
-          temp3 = c(temp3,allDiseaseWork[j,"RateCalc"]) #Saving the value in a vector
-          temp4 = c(temp4, allDiseaseWork[j, "STD_Cases"])
+          temp3 = c(temp3,STD1[j,"RateCalc"]) #Saving the value in a vector
+          temp4 = c(temp4, STD1[j, "STD_Cases"])
           i = i+1 #Next step on the state list
           j = j+1 #Next step on our selection list
         }
       }
-      if(temp [i] != temp2[j] |is.na(temp [i] != temp2[j])) 
+      if(temp [i] != temp2[j] |is.na(temp [i] != temp2[j]))
       {
         temp3 = c(temp3, 0) #If the state isn't in our filtered list, it has 0 people with the disease
         temp4 = c(temp4, 0)
@@ -148,25 +158,17 @@ server <- function(input, output, session) {
     
     temp3 =unlist(temp3, use.names=FALSE)
     
-    states <- geojsonio::geojson_read("geojson/us-states.json", what = "sp")
-    
-    m <- leaflet(states) %>%
-      setView(-96, 37.8, 4) %>%
-      addProviderTiles("MapBox", options = providerTileOptions(
-        id = "mapbox.light",
-        accessToken = Sys.getenv('MAPBOX_ACCESS_TOKEN')))
-    
     ## Preparing the legend
-    minallDiseaseWork =  min(allDiseaseWork$RateCalc)
-    maxallDiseaseWork = max(allDiseaseWork$RateCalc)
+    maxSTD1 = max(STD1$RateCalc)
     
-    stepLegend = (maxallDiseaseWork - minallDiseaseWork) / 9
+    stepLegend = (maxSTD1 / 9)
     legendRow = c(0)
     
     for (i in 1:9)
     {
-      legendRow = c(legendRow, minallDiseaseWork + stepLegend*i)    
+      legendRow = c(legendRow, 0 + stepLegend*i)
     }
+    legendRow[10] = legendRow[10] + 0.05
     
     bins <- legendRow
     pal <- colorBin("YlOrRd", domain = temp3, bins = bins)
@@ -176,41 +178,32 @@ server <- function(input, output, session) {
       states$name, temp4
     ) %>% lapply(htmltools::HTML)
     
-    m =  m %>% addTiles () %>% addPolygons(
+    leafletProxy ("map")  %>% addPolygons(data = states,
       fillColor = ~pal(temp3),
-      weight = 2,
-      opacity = 1,
-      color = "white",
+      weight = 1,
+      opacity = 0.7,
+      color = "grey",
       dashArray = "3",
       fillOpacity = 0.7,
       highlight = highlightOptions(
         weight = 5,
         color = "#666",
         dashArray = "",
-        fillOpacity = 1,
+        fillOpacity = 0.85,
         bringToFront = TRUE),
       label = labels,
       labelOptions = labelOptions(
         style = list("font-weight" = "normal", padding = "3px 8px"),
         textsize = "15px",
-        direction = "auto")) %>% 
-      addLegend(pal = pal, values = ~temp3, opacity = 0.7, title = "for 1 000 inhabitants of a class of age",
-                position = "bottomright")
+        direction = "auto")) %>%  clearControls() %>% addLegend(pal = pal, values = temp3, opacity = 0.85,
+                                                                title = "for 1 000 inhabitants of a class of age",
+                                                                position = "bottomright")
+      })
     
-  })
-  
-  output$mapTable = renderDT(allDisease, extensions = c("Buttons", "ColReorder", 'KeyTable'), 
+  output$mapTable = renderDT(STD, extensions = c("Buttons", "ColReorder", 'KeyTable'), 
                              filter = "top",  
                              options = list(keys = TRUE, colReorder = TRUE,pageLength = 20, dom = "Bfrtip", buttons = c("copy", "csv", "pdf",I('colvis'))))
   
-  observeEvent(input$savemap, {
-    
-    temp = Sys.time()
-    temp =str_replace_all(temp, "[[:punct:]]", "")
-    temp = str_replace_all (temp, " ", "")
-    
-    mapshot (m, file = paste0("map",temp,".png"))
-  })
   output$contingence = renderDT({
     
     #Building the contingence Table
@@ -238,12 +231,14 @@ server <- function(input, output, session) {
     
     #Defining the first condition  
     
-    # temp =allDiseaseEthnia %>% filter(Gender == input$OddsGender) %>%  filter(Age_Code == input$OddsAge) %>% 
+    STD2 = STD
+    
+    # temp =STD2 %>% filter(Gender == input$OddsGender) %>%  filter(Age_Code == input$OddsAge) %>% 
     #      filter(Disease == input$OddsDisease) %>% 
     #      filter(State == input$OddsState) %>%
     #      filter(`Race/Ethnicity` == input$OddsEthnia)
     
-    temp = allDiseaseEthnia
+    temp = STD2
     
     if (deactivate == 1){} 
     else {temp = temp %>% filter(Gender == input$OddsGender)}
@@ -272,7 +267,7 @@ server <- function(input, output, session) {
     {firstline = c(firstline, as.numeric(temp[1,7]))}
     
     #Defining the second condition
-    temp2 =allDiseaseEthnia %>% filter(Gender == input$OddsGender2) %>%  filter(Age_Code == input$OddsAge2) %>% 
+    temp2 =STD2 %>% filter(Gender == input$OddsGender2) %>%  filter(Age_Code == input$OddsAge2) %>% 
       filter(Disease == input$OddsDisease2) %>% 
       filter(State == input$OddsState2) %>%
       filter(`Race/Ethnicity` == input$OddsEthnia2)
@@ -285,7 +280,7 @@ server <- function(input, output, session) {
     {secondline = c(secondline, as.numeric(temp2[1,7]))}
     
     #Creating the total values
-    total1 = allDiseaseEthnia %>% group_by(State) %>% summarise (sum(Population))
+    total1 = STD2 %>% group_by(State) %>% summarise (sum(Population))
     # total1 = total1 %>% filter(State == )
     
     

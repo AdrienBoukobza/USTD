@@ -131,3 +131,58 @@ allDisease = allDisease %>% mutate (Rateonpop = `STD Cases`*100/Population)
 summary (AllDiseaseEthnia)
 summary (AllDiseaseEthnia$Gender)
 table (AllDiseaseEthnia$Gender)
+
+
+#####
+
+# Creating two new DT : one to summarise the cases and one to summarise the population
+
+STD1 = STD1 %>% filter (Gender == "Male") %>%  filter (Disease == "Primary and Secondary Syphilis") %>% 
+  filter (Year == 2000) %>% 
+  filter (Age_Code == "0-14")
+
+STD1Cases = STD1 %>% group_by(State) %>% summarise(STD_Cases = sum(STD_Cases))
+STD1Pop = STD1 %>% group_by(State) %>% summarise (Population = sum(Population))
+
+#Setting the old work as the new base for the cases
+STD1 = STD1Cases
+rm(STD1Cases)
+
+#Creating the rates in the working table
+STD1 = STD1 %>% mutate (RateCalc = STD1$STD_Cases * 1000 / STD1Pop$Population)
+rm(STD1Pop)
+
+
+#Creating two lists : one with all the names of the states and one with our selection's
+
+states <- geojsonio::geojson_read("geojson/us-states.json", what = "sp")
+
+temp = states$name
+temp2 = STD1$State
+
+#Initializing the 3 variables used in the loop
+i=1 #Representing the position in the states list
+j=1 #Representing the position in our selection list
+temp3 = c() #Generating a vector with all of the informations in our list
+temp4 = c() #Generating a vector with the rates
+while (i < 53)
+{
+  if(!is.na(temp [i] == temp2[j])) { #Avoid the error with NA values
+    if (temp [i] == temp2[j])
+    {
+      temp3 = c(temp3,STD1[j,"RateCalc"]) #Saving the value in a vector
+      temp4 = c(temp4, STD1[j, "STD_Cases"])
+      i = i+1 #Next step on the state list
+      j = j+1 #Next step on our selection list
+    }
+  }
+  if(temp [i] != temp2[j] |is.na(temp [i] != temp2[j])) 
+  {
+    temp3 = c(temp3, 0) #If the state isn't in our filtered list, it has 0 people with the disease
+    temp4 = c(temp4, 0)
+    i =i+1 #Next step of the state list
+  }
+  
+}
+
+temp3 =unlist(temp3, use.names=FALSE)
