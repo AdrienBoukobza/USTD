@@ -28,9 +28,9 @@ varsAge = c(
 )
 
 varsEthnia = c(
-  "American Indian or Alaska Native" = "American Indian",
-  "Asian or Pacific Islander" = "Asian",
-  "Black or African American" = "African American",
+  "American Indian or Alaska Native" = "American Indian or Alaska Native",
+  "Asian or Pacific Islander" = "Asian or Pacific Islander",
+  "Black or African American" = "Black or African American",
   "Hispanic" = "Hispanic" , 
   "White" = "White"
 )
@@ -176,5 +176,5 @@ temp = which (is.na(STD$"Population"))
 if (length(temp) != 0) #Vérifiyng that the vector isn't empty
 {STD = STD[-c(temp),]}
 
-write.csv(STD, "STD.csv")
-saveRDS(STD, "STD.rds")
+write.csv(STD, "data/STD.csv")
+saveRDS(STD, "data/STD.rds")
