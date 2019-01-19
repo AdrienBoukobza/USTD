@@ -10,8 +10,16 @@ library (DT)
 library (mapview)
 library (stringr)
 library (shinyjs)
+library(plotly)
+library(ggplot2)
 
 STD = readRDS("data/STD.rds")
+
+affinefunction = function (a=a, b=b, x=x){
+  result = a*x+b
+  return (result)
+} 
+
 
 ui <- fluidPage(
   
@@ -38,7 +46,15 @@ ui <- fluidPage(
              
              tabPanel("Clinics explorer"),
              
-             tabPanel ("Curve Explorer"),
+             tabPanel ("Curve Explorer",
+                       selectInput("statecurve", "State", states$name),
+                       selectInput("diseasecurve", "Disease", varsDisease[1:3]),
+                       sliderInput("yearcurve", "Projection Year:",
+                                   min = 2015, max = 2100,
+                                   value = 2015, animate =
+                                     animationOptions(interval = 1200, loop = FALSE)),
+                       plotlyOutput("curve",width = "100%", height = "400px")
+                       ),
              
              tabPanel("Odds Ratio",
                       fluidRow(
@@ -407,9 +423,32 @@ onclick("MapRRbutton",{
   
   contingence <- read_csv("data/Contingence.csv",
                           col_types = cols(X1 = col_skip()))
+}) 
+
+output$curve = renderPlotly({
   
+  plot = STD %>% filter(State == input$statecurve) %>% filter(Disease == input$diseasecurve) %>%
+    group_by(Year) %>% summarise(sum(STD_Cases))
+  colnames(plot) = c("Year", "Cases")
   
+  a = (plot[19,2]- plot[1,2])/18
+  b = plot[19,2] - 2014*a
+  x = input$yearcurve
+  i = 0
+  temp = c()
+  temp2 = c()
   
+  for (i in 2015:x){
+    temp = c(temp,i)
+    if (affinefunction (a,b,i) >= 0){temp2 = c(temp2, affinefunction(a,b,i))}
+    else {temp2 = c(temp2,0)}
+  }
+  newRows = data.frame(Year = unlist(temp), Cases = unlist(temp2))
+  plot = rbind (plot, newRows)
+  
+  ggplot(plot, aes(x = plot$Year, y = plot$Cases, fill = plot$Cases)) +
+    geom_bar(stat = "identity")
+
 })
 
 }

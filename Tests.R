@@ -186,3 +186,27 @@ while (i < 53)
 }
 
 temp3 =unlist(temp3, use.names=FALSE)
+dsamp <- diamonds[sample(nrow(diamonds), 1000), ]
+(d <- ggplot(test, aes(Year, "sum(STD_Cases)")) +
+    geom_point(aes(colour = "sum(STD_Cases)")))
+######
+
+
+plot = STD %>% filter(State == "Alabama") %>% filter(Disease == "Chlamydia") %>%
+  group_by(Year) %>% summarise(sum(STD_Cases))
+colnames(plot) = c("Year", "Cases")
+
+a = (plot[19,2]- plot[1,2])/18
+b = plot[19,2] - 2014*a
+x = input$yearcurve
+
+temp = c()
+temp2 = c()
+for (i in 2015:2019){
+  temp = c(temp,i)
+  temp2 = c(temp2, affinefunction(a,b,i))
+}
+temp2 = unlist(temp2)
+temp = unlist(temp)
+newRows = data.frame(Year = temp, Cases = temp2)
+plot = rbind (plot, newRows)
