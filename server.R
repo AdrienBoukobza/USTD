@@ -12,6 +12,8 @@ library (stringr)
 library (shinyjs)
 library(plotly)
 library(ggplot2)
+library(shinythemes)
+library(DiagrammeR)
 
 STD = readRDS("data/STD.rds")
 
@@ -21,7 +23,7 @@ affinefunction = function (a=a, b=b, x=x){
 } 
 
 
-ui <- fluidPage(
+ui <- fluidPage(theme = shinytheme("flatly"),
   
   shinyjs::useShinyjs(),
   
@@ -41,7 +43,22 @@ ui <- fluidPage(
                                                    animationOptions(interval = 1200, loop = FALSE)),
                                      selectInput ("age", "Age class", varsAge)
                                      
-                       )
+                       ),
+                       mermaid("
+gantt
+dateFormat  YYYY-MM-DD
+title Some informations
+
+section Disease
+Minimum of Syphilis           :active,        Disease_1,    2000-01-01, 2001-12-31
+Minimum of Gonorrhea          :active,        Disease_2,    2009-01-01, 2009-12-31
+
+section President
+Bill Clinton                  :crit, done,    Clinton ,   1993-01-20, 2001-01-20
+George W Bush                 :crit, done,    Bush,       2001-01-20, 2009-01-20
+Barack Obama                  :crit, done,    Obama,      2009-01-20, 2017-01-20
+")
+                       
              ),
              
              tabPanel("Clinics explorer"),
@@ -158,7 +175,6 @@ server <- function(input, output, session) {
     
     #Creating the rates in the working table
     STD1 = STD1 %>% mutate (RateCalc = STD1$STD_Cases * 1000 / STD1Pop$Population)
-    rm(STD1Pop)
     
     
     #Creating two lists : one with all the names of the states and one with our selection's
@@ -173,13 +189,16 @@ server <- function(input, output, session) {
     j=1 #Representing the position in our selection list
     temp3 = c() #Generating a vector with all of the informations in our list
     temp4 = c() #Generating a vector with the rates
+    temp5 = c()
+    
     while (i < 53)
     {
       if(!is.na(temp [i] == temp2[j])) { #Avoid the error with NA values
         if (temp [i] == temp2[j])
         {
           temp3 = c(temp3,STD1[j,"RateCalc"]) #Saving the value in a vector
-          temp4 = c(temp4, STD1[j, "STD_Cases"])
+          temp4 = c(temp4, STD1[j, "STD_Cases"]) #Saving the rates
+          temp5 = c(temp5, STD1Pop[j,"Population"]) #Saving the population
           i = i+1 #Next step on the state list
           j = j+1 #Next step on our selection list
         }
@@ -188,6 +207,7 @@ server <- function(input, output, session) {
       {
         temp3 = c(temp3, 0) #If the state isn't in our filtered list, it has 0 people with the disease
         temp4 = c(temp4, 0)
+        temp5 = c(temp5, 0)
         i =i+1 #Next step of the state list
       }
       
@@ -210,9 +230,24 @@ server <- function(input, output, session) {
     bins <- legendRow
     pal <- colorBin("YlOrRd", domain = temp3, bins = bins)
     
+    #Preparing the labels
+
+    meancountrypop = STD %>% filter(Disease == input$disease) %>% filter (Year == input$year) %>% 
+      group_by(Disease) %>% summarise (sum(Population))
+    meancountrypop = as.numeric(meancountrypop[1,2])
+    
+    meancountrycases = STD %>% filter(Disease == input$disease) %>% filter (Year == input$year) %>% 
+      group_by(Disease) %>% summarise (sum(STD_Cases))
+    meancountrycases = as.numeric(meancountrycases[1,2])
+    
+    meancountry = (meancountrycases *1000 )/ meancountrypop
+    
+    for (i in 1:51){
+      meancountry = c(meancountry, meancountry[1])}
+
     labels <- sprintf(
-      "<strong>%s</strong><br/>%g cases in the state",
-      states$name, temp4
+      "<strong>%s</strong><br/>%g cases in the state <br/>Average: %g <br/> Population: %g <br/> Remind, country mean: %g",
+      states$name, temp4, temp3,temp5, meancountry
     ) %>% lapply(htmltools::HTML)
     
     leafletProxy ("map")  %>% addPolygons(data = states,

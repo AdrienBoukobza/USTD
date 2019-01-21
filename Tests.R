@@ -210,3 +210,20 @@ temp2 = unlist(temp2)
 temp = unlist(temp)
 newRows = data.frame(Year = temp, Cases = temp2)
 plot = rbind (plot, newRows)
+
+
+#######
+
+
+meancountrypop = STD %>% filter(Disease == "Chlamydia") %>% filter (Year == "1996") %>% 
+  group_by(Disease) %>% summarise (sum(Population))
+meancountrypop = as.numeric(meancountrypop[1,2])
+
+meancountrycases = STD %>% filter(Disease == "Chlamydia") %>% filter (Year == "1996") %>% 
+  group_by(Disease) %>% summarise (sum(STD_Cases))
+meancountrycases = as.numeric(meancountrycases[1,2])
+
+meancountry = (meancountrycases *1000 )/ meancountrypop
+
+for (i in 1:51){
+  meancountry = c(meancountry, meancountry[1])}
