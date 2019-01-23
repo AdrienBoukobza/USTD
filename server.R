@@ -32,7 +32,7 @@ ui <- fluidPage(theme = shinytheme("flatly"),
                        leafletOutput("map", width = "100%", height = "700"),
                        absolutePanel(id = "controls", class = "panel panel-default", fixed = TRUE,
                                      draggable = TRUE, top = 60, left = "auto", right = 20, bottom = "auto",
-                                     width = 340, height = "auto", 
+                                     width = 340, height = "auto", align = "center",
                                      h2("STD in the USA"),
                                      
                                      selectInput ("disease", "Disease", varsDisease),
@@ -145,20 +145,17 @@ server <- function(input, output, session) {
     
     #Filtering data, preventing the analyzer to filter the "All" Option.
     
-    if(input$disease == "All") {}
-    else
+    if(input$disease != "All")
     {
       STD1 = STD1 %>% filter(Disease == input$disease)
     }
     
-    if(input$gender == "All"){}
-    else
+    if(input$gender != "All")
     {
       STD1 = STD1 %>% filter(Gender == input$gender)
     }
     
-    if(input$age == "All"){}
-    else
+    if(input$age != "All")
     {
       STD1 = STD1 %>% filter(Age_Code == input$age)
     }
@@ -213,7 +210,7 @@ server <- function(input, output, session) {
       
     }
     
-    temp3 =unlist(temp3, use.names=FALSE)
+    temp3 =unlist(temp3, use.names=FALSE) 
     
     ## Preparing the legend
     maxSTD1 = max(STD1$RateCalc)
@@ -225,6 +222,7 @@ server <- function(input, output, session) {
     {
       legendRow = c(legendRow, 0 + stepLegend*i)
     }
+    
     legendRow[10] = legendRow[10] + 0.05
     
     bins <- legendRow
@@ -280,7 +278,7 @@ server <- function(input, output, session) {
     
     #Building the contingence Table
     
-    # Defining which is the value to exclude here
+    #Defining which is the value to exclude here
     
     deactivate = 0
     deactivate2 = 0
@@ -438,7 +436,7 @@ onclick ("RRbutton", {
     RR = as.numeric((contingence[1,2] / contingence [1,4]) / (contingence[2,2] / contingence [2,4]))
     updateTextInput(session, "RR",label = "Risk Ratio", value = RR)
   
-    }else {updateTextInput(session, "RR",label = "Risk Ratio", value = "la condition n'est pas applicable")}
+    }else {updateTextInput(session, "RR",label = "Risk Ratio", value = "Condition isn't applicable")}
 })
 
 onclick ("ORbutton", {
@@ -451,7 +449,7 @@ onclick ("ORbutton", {
     OR = as.numeric((contingence[1,2] / contingence [1,3]) / (contingence[2,2] / contingence [2,3]))
     updateTextInput(session, "OR",label = "Odds Ratio", value = OR)
     
-  }else {updateTextInput(session, "OR",label = "Risk Ratio", value = "la condition n'est pas applicable")}
+  }else {updateTextInput(session, "OR",label = "Risk Ratio", value = "Condition isn't applicable")}
 })
 
 onclick("MapRRbutton",{
@@ -482,7 +480,11 @@ output$curve = renderPlotly({
   plot = rbind (plot, newRows)
   
   ggplot(plot, aes(x = plot$Year, y = plot$Cases, fill = plot$Cases)) +
-    geom_bar(stat = "identity")
+    geom_bar(stat = "identity") +
+    xlab ("Year")+
+    ylab ("Number of cases")+
+    ggtitle ("Representation of the evolution of the cases in few next years")+
+    labs (fill = "Number of cases" )
 
 })
 
