@@ -14,15 +14,10 @@ library(plotly)
 library(ggplot2)
 library(shinythemes)
 library(DiagrammeR)
-####library(prophet)
+library(prophet)
+library(tidyr)
 
 STD = readRDS("data/STD.rds")
-
-affinefunction = function (a=a, b=b, x=x){
-  result = a*x+b
-  return (result)
-} 
-
 
 ui <- fluidPage(theme = shinytheme("flatly"),
                 
@@ -41,24 +36,13 @@ ui <- fluidPage(theme = shinytheme("flatly"),
                                                    sliderInput("year", "Year:",
                                                                min = 1996, max = 2014,
                                                                value = 1996, animate =
-                                                                 animationOptions(interval = 1200, loop = FALSE)),
+                                                                 animationOptions(interval = 1500, loop = FALSE)),
                                                    selectInput ("age", "Age class", varsAge)
                                                    
                                      ),
-                                     mermaid("
-gantt
-dateFormat  YYYY-MM-DD
-title Some informations
-
-section Disease
-Minimum of Syphilis           :active,        Disease_1,    2000-01-01, 2001-12-31
-Minimum of Gonorrhea          :active,        Disease_2,    2009-01-01, 2009-12-31
-
-section President
-Bill Clinton                  :crit, done,    Clinton ,   1993-01-20, 2001-01-20
-George W Bush                 :crit, done,    Bush,       2001-01-20, 2009-01-20
-Barack Obama                  :crit, done,    Obama,      2009-01-20, 2017-01-20
-")
+                                     DiagrammeROutput("timeline", width = 1000, height= 500),
+                                     plotlyOutput("curvetotal", width = "710", height = 400),
+                                     plotlyOutput("curvefilter", width = "710", height = 400)
                                      
                            ),
                            
@@ -67,10 +51,6 @@ Barack Obama                  :crit, done,    Obama,      2009-01-20, 2017-01-20
                            tabPanel ("Curve Explorer",
                                      selectInput("statecurve", "State", states$name),
                                      selectInput("diseasecurve", "Disease", varsDisease[1:3]),
-                                     sliderInput("yearcurve", "Projection Year:",
-                                                 min = 2015, max = 2100,
-                                                 value = 2015, animate =
-                                                   animationOptions(interval = 1200, loop = FALSE)),
                                      plotlyOutput("curve",width = "100%", height = "400px")
                            ),
                            
@@ -178,44 +158,26 @@ server <- function(input, output, session) {
     #Creating the rates in the working table
     STD1 = STD1 %>% mutate (RateCalc = STD1$STD_Cases * 1000 / STD1Pop$Population)
     
+    #Completing the table with the populations
+    STD1 = STD1 %>% mutate(Population = STD1Pop$Population)
     
-    #Creating two lists : one with all the names of the states and one with our selection's
-    
+    #Adding the states data
     states <- geojsonio::geojson_read("geojson/us-states.json", what = "sp")
     
-    temp = states$name
-    temp2 = STD1$State
+    #Establishing which are the missing states
+    difference = tibble(setdiff(states$name,STD1$State),
+                        STD_Cases = 0,
+                        RateCalc = 0,
+                        Population = 0
+                        )
     
-    #Initializing the 3 variables used in the loop
-    i=1 #Representing the position in the states list
-    j=1 #Representing the position in our selection list
-    temp3 = c() #Generating a vector with all of the informations in our list
-    temp4 = c() #Generating a vector with the rates
-    temp5 = c()
     
-    while (i < 53)
-    {
-      if(!is.na(temp [i] == temp2[j])) { #Avoid the error with NA values
-        if (temp [i] == temp2[j])
-        {
-          temp3 = c(temp3,STD1[j,"RateCalc"]) #Saving the value in a vector
-          temp4 = c(temp4, STD1[j, "STD_Cases"]) #Saving the rates
-          temp5 = c(temp5, STD1Pop[j,"Population"]) #Saving the population
-          i = i+1 #Next step on the state list
-          j = j+1 #Next step on our selection list
-        }
-      }
-      if(temp [i] != temp2[j] |is.na(temp [i] != temp2[j]))
-      {
-        temp3 = c(temp3, 0) #If the state isn't in our filtered list, it has 0 people with the disease
-        temp4 = c(temp4, 0)
-        temp5 = c(temp5, 0)
-        i =i+1 #Next step of the state list
-      }
-      
-    }
+    colnames(difference) = c("State","STD_Cases", "RateCalc" , "Population")
     
-    temp3 =unlist(temp3, use.names=FALSE) 
+    #Fusionning the two data and ordering to use with the map
+    STD1 = rbind(STD1,difference)
+    STD1 = STD1[order(match(STD1$State, states$name)),]
+    
     
     ## Preparing the legend
     maxSTD1 = max(STD1$RateCalc)
@@ -231,16 +193,20 @@ server <- function(input, output, session) {
     legendRow[10] = legendRow[10] + 0.05
     
     bins <- legendRow
-    pal <- colorBin("YlOrRd", domain = temp3, bins = bins)
+    pal <- colorBin("YlOrRd", domain = STD1$RateCalc, bins = bins)
     
     #Preparing the labels
     
-    meancountrypop = STD %>% filter(Disease == input$disease) %>% filter (Year == input$year) %>% 
+    if (input$disease!= "All") {meancountrypop = STD %>%  filter(Disease == input$disease)}
+    meancountrypop = STD %>%  filter (Year == input$year) %>% 
       group_by(Disease) %>% summarise (sum(Population))
+
     meancountrypop = as.numeric(meancountrypop[1,2])
     
-    meancountrycases = STD %>% filter(Disease == input$disease) %>% filter (Year == input$year) %>% 
+    if (input$disease!= "All") {meancountrycases = STD %>%  filter(Disease == input$disease)}
+    meancountrycases = STD  %>% filter (Year == input$year) %>% 
       group_by(Disease) %>% summarise (sum(STD_Cases))
+    
     meancountrycases = as.numeric(meancountrycases[1,2])
     
     meancountry = (meancountrycases *1000 )/ meancountrypop
@@ -250,11 +216,11 @@ server <- function(input, output, session) {
     
     labels <- sprintf(
       "<strong>%s</strong><br/>%g cases in the state <br/>Average: %g <br/> Population: %g <br/> Remind, country mean: %g",
-      states$name, temp4, temp3,temp5, meancountry
+      states$name, STD1$STD_Cases, STD1$RateCalc,STD1$Population, meancountry
     ) %>% lapply(htmltools::HTML)
     
     leafletProxy ("map")  %>% addPolygons(data = states,
-                                          fillColor = ~pal(temp3),
+                                          fillColor = ~pal(STD1$RateCalc),
                                           weight = 1,
                                           opacity = 0.7,
                                           color = "grey",
@@ -270,14 +236,27 @@ server <- function(input, output, session) {
                                           labelOptions = labelOptions(
                                             style = list("font-weight" = "normal", padding = "3px 8px"),
                                             textsize = "15px",
-                                            direction = "auto")) %>%  clearControls() %>% addLegend(pal = pal, values = temp3, opacity = 0.85,
+                                            direction = "auto")) %>%  clearControls() %>% addLegend(pal = pal, values = STD1$RateCalc, opacity = 0.85,
                                                                                                     title = "for 1 000 inhabitants of a class of age",
                                                                                                     position = "bottomright")
   })
   
-  output$mapTable = renderDT(STD, extensions = c("Buttons", "ColReorder", 'KeyTable'), 
+  output$mapTable = renderDT({
+    
+    STD$Disease = as.factor(STD$Disease)
+    STD$State = as.factor (STD$State)
+    STD$`Race/Ethnicity` = as.factor(STD$`Race/Ethnicity`)
+    STD$Age = as.factor (STD$Age)
+    STD$Age_Code = as.factor (STD$Age_Code)
+    STD$Gender = as.factor(STD$Gender)
+    STD$Gender_Code = as.factor(STD$Gender_Code)
+    STD
+    
+    
+    }, extensions = c("Buttons", "ColReorder", 'KeyTable'), 
                              filter = "top",  
-                             options = list(keys = TRUE, colReorder = TRUE,pageLength = 20, dom = "Bfrtip", buttons = c("copy", "csv", "pdf",I('colvis'))))
+                             options = list(keys = TRUE, colReorder = TRUE,pageLength = 20, dom = "Bfrtip", buttons = c("copy", "csv", "pdf",I('colvis')), autoWidth = TRUE,
+                                            columnDefs = list(list(width = '200px', targets = "_all"))))
   
   output$contingence = renderDT({
     
@@ -404,7 +383,7 @@ server <- function(input, output, session) {
     {secondline = c(secondline, as.numeric(temp2[1,2]))}
     
     #Creating the total values
-    total = STD2 %>% group_by(State) %>% summarise (sum(Population))
+    total = STD %>% group_by(State) %>% summarise (sum(Population))
     total1 = total %>% filter(State == input$OddsState)
     total2 = total %>% filter(State == input$OddsState2)
     
@@ -467,33 +446,104 @@ server <- function(input, output, session) {
     
     plot = STD %>% filter(State == input$statecurve) %>% filter(Disease == input$diseasecurve) %>%
       group_by(Year) %>% summarise(sum(STD_Cases))
-    colnames(plot) = c("Year", "Cases")
     
-    a = (plot[19,2]- plot[1,2])/18
-    b = plot[19,2] - 2014*a
-    x = input$yearcurve
-    i = 0
-    temp = c()
-    temp2 = c()
+    colnames(plot) = c("ds", "y")
+    plot$ds = paste (plot$ds, "-01-01", sep = "")
+    newplot = prophet(plot)
     
-    for (i in 2015:x){
-      temp = c(temp,i)
-      if (affinefunction (a,b,i) >= 0){temp2 = c(temp2, affinefunction(a,b,i))}
-      else {temp2 = c(temp2,0)}
-    }
-    newRows = data.frame(Year = unlist(temp), Cases = unlist(temp2))
-    plot = rbind (plot, newRows)
-    
-    ggplot(plot, aes(x = plot$Year, y = plot$Cases, fill = plot$Cases)) +
-      geom_bar(stat = "identity") +
-      xlab ("Year")+
-      ylab ("Number of cases")+
-      ggtitle ("Representation of the evolution of the cases in few next years")+
-      labs (fill = "Number of cases" )
-    
+    future = make_future_dataframe(newplot, periods= 3650)
+    forecast <- predict(newplot, future)
+    tail(forecast[c('ds', 'yhat', 'yhat_lower', 'yhat_upper')])
+    plot(newplot, forecast)
   })
   
+  output$curvetotal = renderPlotly({
+    plot2 = STD %>% group_by(Year) %>% summarise(sum(STD_Cases))
+    colnames(plot2) = c("Year", "STD_Cases")
+    ggplot(plot2, aes(x = Year, y = STD_Cases))+
+      geom_line(color = "blue")+
+      xlab ("Year")+
+      ylab ("Number of cases")+
+      labs(title = "Evolution of total number of cases")
+  })
+  
+  output$curvefilter = renderPlotly({
+    plot3 = STD %>% filter(Age_Code == input$age) %>% 
+      filter(Disease == input$disease) %>%
+      filter(Gender == input$gender)
+    
+    plot3  = plot3 %>% group_by(Year) %>% summarise (sum(STD_Cases))
+    colnames(plot3) = c("Year", "STD_Cases")
+    
+    ggplot(plot3, aes(x= Year, y = STD_Cases))+
+      geom_line(color = "red")+
+      xlab("Year")+
+      ylab ("Number of cases")+
+      labs (title = "Evolution of number of cases with our filters")
+    
+  })
+
+  output$timeline = renderDiagrammeR({
+     
+    stringtimeline = "gantt
+dateFormat  YYYY-MM-DD
+     title Some informations
+     
+     section Disease
+     Minimum of Syphilis:"
+    
+    if (input$year >= 2000 & input$year <=2001){
+      stringtimeline = paste0(stringtimeline,"active,Disease_1,2000-01-01, 2001-12-31
+                               Minimum of Gonorrhea:")
+    }else{
+      stringtimeline = paste0(stringtimeline, "done,Disease_1,2000-01-01, 2001-12-31
+                               Minimum of Gonorrhea:")
+    }
+    
+    if (input$year == 2009){
+      stringtimeline = paste0(stringtimeline,"active,Disease_2,2009-01-01, 2009-12-31
+                          section President 
+                          Bill Clinton:")
+    }else{
+      stringtimeline = paste0(stringtimeline, "done,Disease_2,2009-01-01, 2009-12-31 
+                          section President
+                          Bill Clinton:")
+    }
+    
+    if (input$year >= 1993 & input$year <=2001){
+      stringtimeline = paste0(stringtimeline,"active,Clinton ,1993-01-20, 2001-01-20
+                          George W Bush:")
+    }else{
+      stringtimeline = paste0(stringtimeline, "done,Clinton , 1993-01-20, 2001-01-20
+                          George W Bush:")
+    }
+    
+    if (input$year >= 2001 & input$year <=2009){
+      stringtimeline = paste0(stringtimeline,"active,Bush,2001-01-20, 2009-01-20
+                          Barack Obama:")
+    }else{
+      stringtimeline = paste0(stringtimeline, "done,Bush,2001-01-20, 2009-01-20
+                          Barack Obama:")
+    }
+    
+    if (input$year >= 2009 & input$year <=2017){
+      stringtimeline = paste0(stringtimeline,"active,Obama,2009-01-20, 2017-01-20")
+    }else{
+      stringtimeline = paste0(stringtimeline, "done,Obama,2009-01-20, 2017-01-20")
+    }
+    
+    timeline = mermaid(stringtimeline)
+    
+    timeline$x$config = list(ganttConfig = list(
+      axisFormatter = list(list(
+        "%Y"
+        ,htmlwidgets::JS(
+          'function(d){ return d.getDay() == 1 }'
+        )
+      ))
+    ))
+    timeline
+  })
 }
 # Run the application 
 shinyApp(ui = ui, server = server)
-

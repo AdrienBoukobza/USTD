@@ -3,6 +3,8 @@ library (dplyr)
 
 #Creating the inputs
 
+states <- geojsonio::geojson_read("geojson/us-states.json", what = "sp")
+
 varsDisease = c(
   "Chlamydia" = "Chlamydia",
   "Gonorrhea" = "Gonorrhea",
@@ -178,3 +180,4 @@ if (length(temp) != 0) #Vérifiyng that the vector isn't empty
 
 write.csv(STD, "data/STD.csv")
 saveRDS(STD, "data/STD.rds")
+

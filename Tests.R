@@ -227,3 +227,140 @@ meancountry = (meancountrycases *1000 )/ meancountrypop
 
 for (i in 1:51){
   meancountry = c(meancountry, meancountry[1])}
+
+#####
+
+plot = STD %>% filter(State == "Alabama") %>% filter(Disease == "Chlamydia") %>%
+  group_by(Year) %>% summarise(sum(STD_Cases))
+colnames(plot) = c("ds", "y")
+plot$ds = paste (plot$ds, "-01-01", sep = "")
+newplot = prophet(plot)
+
+future = make_future_dataframe(newplot, periods= 3650)
+forecast <- predict(newplot, future)
+tail(forecast[c('ds', 'yhat', 'yhat_lower', 'yhat_upper')])
+plot(newplot, forecast)
+dyplot.prophet(newplot, forecast)
+
+######
+mermaid( 
+"gantt
+dateFormat  YYYY-MM-DD
+title Adding GANTT diagram functionality to mermaid
+section A section
+Completed task            :done,    des1, 2014-01-06,2014-01-08
+Active task               :active,  des2, 2014-01-09, 3d
+Future task               :         des3, after des2, 5d
+Future task2               :         des4, after des3, 5d
+section Critical tasks
+Completed task in the critical line :crit, done, 2014-01-06,24h
+Implement parser and jison          :crit, done, after des1, 2d
+Create tests for parser             :crit, active, 3d
+Future task in critical line        :crit, 5d
+Create tests for renderer           :2d
+Add to mermaid                      :1d"
+
+)
+mermaid("theme": "default")
+
+
+
+######
+  
+  
+ mermaid( "gantt
+dateFormat  YYYY-MM-DD
+title Some informations
+
+section Disease
+Minimum of Syphilis           :done,        Disease_1,    2000-01-01, 2001-12-31
+Minimum of Gonorrhea          :done,        Disease_2,    2009-01-01, 2009-12-31
+
+section President
+Bill Clinton                  :done,    Clinton ,   1993-01-20, 2001-01-20
+George W Bush                 :done,    Bush,       2001-01-20, 2009-01-20
+Barack Obama                  :done,    Obama,      2009-01-20, 2017-01-20
+", width = "800")
+
+######################
+library (DiagrammeR)
+stringtimeline = "gantt
+dateFormat  YYYY-MM-DD
+title Some informations
+
+section Disease
+Minimum of Syphilis:"
+
+randomnumber = 2010
+if (randomnumber >= 2000 & randomnumber <=2001){
+  stringtimeline = paste0(stringtimeline,"active,Disease_1,2000-01-01, 2001-12-31
+Minimum of Gonorrhea:")
+}else{
+  stringtimeline = paste0(stringtimeline, "done,Disease_1,2000-01-01, 2001-12-31
+Minimum of Gonorrhea:")
+}
+
+if (randomnumber == 2009){
+  stringtimeline = paste0(stringtimeline,"active,Disease_2,2009-01-01, 2009-12-31
+                          section President 
+                          Bill Clinton:")
+}else{
+  stringtimeline = paste0(stringtimeline, "done,Disease_2,2009-01-01, 2009-12-31 
+                          section President
+                          Bill Clinton:")
+}
+
+if (randomnumber >= 1993 & randomnumber <=2001){
+  stringtimeline = paste0(stringtimeline,"active,Clinton ,1993-01-20, 2001-01-20
+                          George W Bush:")
+}else{
+  stringtimeline = paste0(stringtimeline, "done,Clinton , 1993-01-20, 2001-01-20
+                          George W Bush:")
+}
+
+if (randomnumber >= 2001 & randomnumber <=2009){
+  stringtimeline = paste0(stringtimeline,"active,Bush,2001-01-20, 2009-01-20
+                          Barack Obama:")
+}else{
+  stringtimeline = paste0(stringtimeline, "done,Bush,2001-01-20, 2009-01-20
+                          Barack Obama:")
+}
+
+if (randomnumber >= 2009 & randomnumber <=2017){
+  stringtimeline = paste0(stringtimeline,"active,Obama,2009-01-20, 2017-01-20")
+}else{
+  stringtimeline = paste0(stringtimeline, "done,Obama,2009-01-20, 2017-01-20")
+}
+
+mermaid(stringtimeline)
+
+################
+timeline = mermaid(stringtimeline)
+
+timeline$x$config = list(ganttConfig = list(
+  axisFormatter = list(list(
+    "%Y"
+    ,htmlwidgets::JS(
+      'function(d){ return d.getDay() == 1 }'
+    )
+  ))
+))
+
+###############
+df <- tibble(
+  group = c(1:2, 1),
+  item_id = c(1:2, 2),
+  item_name = c("a", "b", "b"),
+  value1 = 1:3,
+  value2 = 4:6
+)
+df %>% complete(group, nesting(item_id, item_name))
+
+# You can also choose to fill in missing values
+df %>% complete(group, nesting(item_id, item_name), fill = list(value1 = 0))
+# }
+
+df = tibble (letters [1:10], c(1:10))
+df[8,1] = NA
+vecteur = letters[1:10]
+complete (df, nesting(vecteur))
