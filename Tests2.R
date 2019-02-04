@@ -59,3 +59,80 @@ rm(STD1Cases)
 #Creating the rates in the working table
 STD1 = STD1 %>% mutate (RateCalc = STD1$STD_Cases * 1000 / STD1Pop$Population)
 STD1 = STD1 %>% mutate(Population = STD1Pop$Population)
+
+
+#####################☺
+
+
+allstateRR = STD %>% filter(Gender == "Female") %>% 
+  filter(Age_Code == "0-14") %>% 
+  filter(Disease == "Chlamydia") %>% 
+  filter(`Race/Ethnicity` == "White") %>% 
+  filter (Year == "1996")
+
+difference = tibble(Disease = "",
+                    State = setdiff(states$name,allstateRR$State),
+                    Year = 0,
+                    `Race/Ethnicity` = "",
+                    Age ="",
+                    Age_Code = "",
+                    STD_Cases = 0,
+                    Population = 0,
+                    Gender = "",
+                    Gender_Code = ""
+)
+
+#Fusionning the two data and ordering to use with the map
+allstateRR = rbind(allstateRR,difference)
+allstateRR = allstateRR[order(match(allstateRR$State, states$name)),]
+
+contingence = contingenceTB()
+contingence <- read_csv("data/Contingence.csv", 
+                        col_types = cols(X1 = col_skip()))
+allstateRR = allstateRR %>%  mutate (RR = ifelse(allstateRR$Population != 0 & allstateRR$STD_Cases != 0,
+                                                 (contingence[1,2] / contingence [1,4]) / (STD_Cases / Population),0
+                                                 ))
+
+## Preparing the legend
+maxRR = max(as.numeric(allstateRR$RR))
+
+stepLegend = (maxRR / 9)
+legendRow = c(0)
+
+for (i in 1:9)
+{
+  legendRow = c(legendRow, 0 + stepLegend*i)
+}
+
+legendRow[10] = legendRow[10] + 0.05
+
+bins <- legendRow
+pal <- colorBin("YlOrRd", domain = allstateRR$RR, bins = bins)
+
+leafletProxy ("map")  %>% addPolygons(data = states,
+                                      fillColor = ~pal(allstateRR$RR),
+                                      weight = 1,
+                                      opacity = 0.7,
+                                      color = "grey",
+                                      dashArray = "3",
+                                      fillOpacity = 0.7,
+                                      highlight = highlightOptions(
+                                        weight = 5,
+                                        color = "#666",
+                                        dashArray = "",
+                                        fillOpacity = 0.85,
+                                        bringToFront = TRUE),
+                                      label = labels,
+                                      labelOptions = labelOptions(
+                                        style = list("font-weight" = "normal", padding = "3px 8px"),
+                                        textsize = "15px",
+                                        direction = "auto")) %>%  clearControls() %>% addLegend(pal = pal, values = allstateRR$RR, opacity = 0.85,
+                                                                                                title = "for 1 000 inhabitants of a class of age",
+                                                                                                position = "bottomright")
+
+
+
+
+
+
+}) 

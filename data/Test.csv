@@ -1,0 +1,53 @@
+"","Disease","State","Year","Race/Ethnicity","Age","Age_Code","STD_Cases","Population","Gender","Gender_Code","RR"
+"1","Chlamydia","Alabama",1996,"White","0-14 years","0-14",2,305884,"Male","M",0.00131719553635193
+"2","","Alaska",0,"","","",0,0,"","",0
+"3","Chlamydia","Arizona",1996,"White","0-14 years","0-14",2,286960,"Male","M",0.00123570514022161
+"4","","Arkansas",0,"","","",0,0,"","",0
+"5","Chlamydia","California",1996,"White","0-14 years","0-14",13,1602589,"Male","M",0.00106170115639951
+"6","Chlamydia","Colorado",1996,"White","0-14 years","0-14",2,309022,"Male","M",0.00133070836995248
+"7","Chlamydia","Connecticut",1996,"White","0-14 years","0-14",2,259802,"Male","M",0.00111875755101706
+"8","","Delaware",0,"","","",0,0,"","",0
+"9","","District of Columbia",0,"","","",0,0,"","",0
+"10","Chlamydia","Florida",1996,"White","0-14 years","0-14",4,891025,"Male","M",0.00191846280416428
+"11","","Georgia",0,"","","",0,0,"","",0
+"12","","Hawaii",0,"","","",0,0,"","",0
+"13","Chlamydia","Idaho",1996,"White","0-14 years","0-14",3,129147,"Male","M",0.000370754603996378
+"14","Chlamydia","Illinois",1996,"White","0-14 years","0-14",11,864180,"Male","M",0.000676604701369032
+"15","Chlamydia","Indiana",1996,"White","0-14 years","0-14",11,545328,"Male","M",0.000426961383725811
+"16","Chlamydia","Iowa",1996,"White","0-14 years","0-14",1,281573,"Male","M",0.00242501535717606
+"17","Chlamydia","Kansas",1996,"White","0-14 years","0-14",4,241549,"Male","M",0.0005200783051913
+"18","Chlamydia","Kentucky",1996,"White","0-14 years","0-14",3,369160,"Male","M",0.00105978280263036
+"19","Chlamydia","Louisiana",1996,"White","0-14 years","0-14",1,294375,"Male","M",0.00253527112247517
+"20","Chlamydia","Maine",1996,"White","0-14 years","0-14",2,126468,"Male","M",0.000544595614976119
+"21","Chlamydia","Maryland",1996,"White","0-14 years","0-14",4,340958,"Male","M",0.000734115474630055
+"22","Chlamydia","Massachusetts",1996,"White","0-14 years","0-14",4,508620,"Male","M",0.00109510793911959
+"23","Chlamydia","Michigan",1996,"White","0-14 years","0-14",5,830081,"Male","M",0.00142979559311444
+"24","Chlamydia","Minnesota",1996,"White","0-14 years","0-14",8,462044,"Male","M",0.000497412658391898
+"25","Chlamydia","Mississippi",1996,"White","0-14 years","0-14",6,169581,"Male","M",0.000243416171108542
+"26","Chlamydia","Missouri",1996,"White","0-14 years","0-14",4,488105,"Male","M",0.00105093716453142
+"27","Chlamydia","Montana",1996,"White","0-14 years","0-14",1,85661,"Male","M",0.000737745595320071
+"28","Chlamydia","Nebraska",1996,"White","0-14 years","0-14",1,162293,"Male","M",0.0013977299576386
+"29","Chlamydia","Nevada",1996,"White","0-14 years","0-14",2,115945,"Male","M",0.000499281546149272
+"30","","New Hampshire",0,"","","",0,0,"","",0
+"31","","New Jersey",0,"","","",0,0,"","",0
+"32","","New Mexico",0,"","","",0,0,"","",0
+"33","","New York",0,"","","",0,0,"","",0
+"34","Chlamydia","North Carolina",1996,"White","0-14 years","0-14",8,515101,"Male","M",0.000554531078750779
+"35","","North Dakota",0,"","","",0,0,"","",0
+"36","Chlamydia","Ohio",1996,"White","0-14 years","0-14",6,998445,"Male","M",0.0014331656197479
+"37","Chlamydia","Oklahoma",1996,"White","0-14 years","0-14",3,265904,"Male","M",0.000763355960425352
+"38","Chlamydia","Oregon",1996,"White","0-14 years","0-14",4,285163,"Male","M",0.000613983455709884
+"39","Chlamydia","Pennsylvania",1996,"White","0-14 years","0-14",6,1018010,"Male","M",0.00146124917502672
+"40","","Rhode Island",0,"","","",0,0,"","",0
+"41","","South Carolina",0,"","","",0,0,"","",0
+"42","","South Dakota",0,"","","",0,0,"","",0
+"43","Chlamydia","Tennessee",1996,"White","0-14 years","0-14",3,431580,"Male","M",0.00123897784689351
+"44","Chlamydia","Texas",1996,"White","0-14 years","0-14",17,1113796,"Male","M",0.000564261238442035
+"45","","Utah",0,"","","",0,0,"","",0
+"46","Chlamydia","Vermont",1996,"White","0-14 years","0-14",1,62531,"Male","M",0.000538541107633104
+"47","Chlamydia","Virginia",1996,"White","0-14 years","0-14",2,486894,"Male","M",0.00209665952935274
+"48","Chlamydia","Washington",1996,"White","0-14 years","0-14",38,482461,"Male","M",0.000109345798727947
+"49","Chlamydia","West Virginia",1996,"White","0-14 years","0-14",3,165428,"Male","M",0.000474909929227259
+"50","Chlamydia","Wisconsin",1996,"White","0-14 years","0-14",7,476533,"Male","M",0.000586298018225763
+"51","Chlamydia","Wyoming",1996,"White","0-14 years","0-14",1,49493,"Male","M",0.000426252819243019
+"52","","Puerto Rico",0,"","","",0,0,"","",0

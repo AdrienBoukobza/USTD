@@ -40,9 +40,9 @@ ui <- fluidPage(theme = shinytheme("flatly"),
                                                    selectInput ("age", "Age class", varsAge)
                                                    
                                      ),
-                                     DiagrammeROutput("timeline", width = 1000, height= 500),
-                                     plotlyOutput("curvetotal", width = "710", height = 400),
-                                     plotlyOutput("curvefilter", width = "710", height = 400)
+                                     DiagrammeROutput("timeline", width = 1000, height= 300),
+                                     plotlyOutput("curvetotal", width = "975", height = 300),
+                                     plotlyOutput("curvefilter", width = "975", height = 300)
                                      
                            ),
                            
@@ -54,7 +54,7 @@ ui <- fluidPage(theme = shinytheme("flatly"),
                                      plotlyOutput("curve",width = "100%", height = "400px")
                            ),
                            
-                           tabPanel("Odds Ratio",
+                           tabPanel("Risk calculator",
                                     fluidRow(
                                       column(3,
                                              h4("Comparative beetween two inhabitants of the United States")
@@ -96,7 +96,8 @@ ui <- fluidPage(theme = shinytheme("flatly"),
                                               textInput("OR", label = "Odds Ratio", value = "Waiting for Data"),
                                               actionButton("MapORbutton", "Rendering map with OR")
                                       )
-                                    )
+                                    ),
+                                    leafletOutput("map2", width = "100%", height = "700")
                                     
                            ),
                            
@@ -116,10 +117,10 @@ server <- function(input, output, session) {
       addProviderTiles("MapBox", options = providerTileOptions(
         id = "mapbox.light",
         accessToken = Sys.getenv('MAPBOX_ACCESS_TOKEN'))) %>% addTiles() %>% 
-      setMaxBounds( lng1 = -95
-                    , lat1 = 36.8
-                    , lng2 = -97
-                    , lat2 = 38.8 )
+      setMaxBounds( lng1 = -90
+                    , lat1 = 70
+                    , lng2 = -100
+                    , lat2 = 10 )
   })
   
   observe({
@@ -258,162 +259,163 @@ server <- function(input, output, session) {
                              options = list(keys = TRUE, colReorder = TRUE,pageLength = 20, dom = "Bfrtip", buttons = c("copy", "csv", "pdf",I('colvis')), autoWidth = TRUE,
                                             columnDefs = list(list(width = '200px', targets = "_all"))))
   
-  output$contingence = renderDT({
-    
-    #Building the contingence Table
-    
-    #Defining which is the value to exclude here
-    
-    deactivate = 0
-    deactivate2 = 0
-    
-    if (input$excluded == "Gender" && input$exclude == TRUE) {deactivate = 1}
-    if (input$excluded == "Age"&& input$exclude == TRUE) {deactivate = 2}
-    if (input$excluded == "Disease"&& input$exclude == TRUE) {deactivate = 3}
-    if (input$excluded == "State"&& input$exclude == TRUE) {deactivate = 4}
-    if (input$excluded == "Ethnia"&& input$exclude == TRUE) {deactivate = 5}
-    if(input$excluded == "Year" && input$exclude == TRUE ){deactivate = 6}
-    
-    if (input$excluded2 == "Gender" && input$exclude2 == TRUE) {deactivate2 = 1}
-    if (input$excluded2 == "Age"&& input$exclude2 == TRUE) {deactivate2 = 2}
-    if (input$excluded2 == "Disease"&& input$exclude2 == TRUE) {deactivate2 = 3}
-    if (input$excluded2 == "State"&& input$exclude2 == TRUE) {deactivate2 = 4}
-    if (input$excluded2 == "Ethnia"&& input$exclude2 == TRUE) {deactivate2 = 5}
-    if(input$excluded2 == "Year" && input$exclude2 == TRUE ){deactivate2 = 6}
-    
-    toggleState("OddsGender", input$exclude != TRUE | deactivate != 1)
-    toggleState("OddsGender2", input$exclude2 != TRUE | deactivate2 != 1)
-    toggleState("OddsAge", input$exclude != TRUE | deactivate!= 2)
-    toggleState("OddsAge2", input$exclude2 != TRUE | deactivate2 != 2)
-    toggleState("OddsDisease", input$exclude != TRUE | deactivate != 3)
-    toggleState("OddsDisease2", input$exclude2 != TRUE | deactivate2 != 3)
-    toggleState("OddsState", input$exclude != TRUE | deactivate != 4)
-    toggleState("OddsState2", input$exclude2 != TRUE | deactivate2!= 4)
-    toggleState("OddsEthnia", input$exclude != TRUE | deactivate != 5)
-    toggleState("OddsEthnia2", input$exclude2 != TRUE | deactivate2!= 5)
-    toggleState("OddsYear", input$exclude != TRUE | deactivate != 6)
-    toggleState("OddsYear2", input$exclude2 != TRUE | deactivate2!= 6)
-    
-    
-    #Defining the first condition  
-    
-    temp = STD
-    
-    if (deactivate == 1){} 
-    else {temp = temp %>% filter(Gender == input$OddsGender)}
-    
-    if (deactivate == 2){}
-    else {temp= temp %>% filter(Age_Code == input$OddsAge)}
-    
-    if(deactivate == 3){}
-    else {temp = temp %>% filter (Disease == input$OddsDisease)}
-    
-    if (deactivate == 4){}
-    else {temp = temp %>% filter (State == input$OddsState)}
-    
-    if (deactivate == 5){}
-    else {temp = temp %>% filter (`Race/Ethnicity` == input$OddsEthnia)}
-    
-    if(deactivate ==6){}
-    else {temp = temp %>% filter (Year == input$OddsYear)}
-    
-    if (deactivate == 6){
-      temp = temp %>% group_by (Disease) %>% summarise(sum(STD_Cases))
-    }
-    
-    if(input$exclude == FALSE) {
-      temp = temp %>% group_by(Disease) %>% summarise (sum(STD_Cases))
-      deactivate =7 #To avoid the error with unknown column
-    }
-    
-    if(deactivate < 6){
-      temp = temp %>% group_by (`Year`) %>% summarise(sum(STD_Cases))
-    }
-    
-    
-    
-    #Creating the first value on the first line
-    
-    firstline = c()
-    if(is.na (as.numeric(temp[1,2])))
-    {firstline =c(firstline, 0)}
-    else  
-    {firstline = c(firstline, as.numeric(temp[1,2]))}
-    
-    #Defining the second condition
-    
-    temp2 = STD
-    
-    if (deactivate2 == 1){} 
-    else {temp2 = temp2 %>% filter(Gender == input$OddsGender2)}
-    
-    if (deactivate2 == 2){}
-    else {temp2= temp2 %>% filter(Age_Code == input$OddsAge2)}
-    
-    if(deactivate2 == 3){}
-    else {temp2 = temp2 %>% filter (Disease == input$OddsDisease2)}
-    
-    if (deactivate2 == 4){}
-    else {temp2 = temp2 %>% filter (State == input$OddsState2)}
-    
-    if (deactivate2 == 5){}
-    else {temp2 = temp2 %>% filter (`Race/Ethnicity` == input$OddsEthnia2)}
-    
-    if(deactivate2 ==6){}
-    else {temp2 = temp2 %>% filter (Year == input$OddsYear2)}
-    
-    if (deactivate2 == 6){
-      temp2 = temp2 %>% group_by (Disease) %>% summarise(sum(STD_Cases))
-    }
-    
-    if(input$exclude2 == FALSE) {
-      temp2 = temp2 %>% group_by(Disease) %>% summarise (sum(STD_Cases))
-      deactivate2 =7 #To avoid the error with unknown column
-    }
-    
-    if(deactivate2 < 6){
-      temp2 = temp2 %>% group_by (`Year`) %>% summarise(sum(STD_Cases))
-    }
-    
-    #Creating the first value on second line
-    secondline = c()
-    if(is.na (as.numeric(temp2[1,2])))
-    {secondline =c(secondline, 0)}
-    else  
-    {secondline = c(secondline, as.numeric(temp2[1,2]))}
-    
-    #Creating the total values
-    total = STD %>% group_by(State) %>% summarise (sum(Population))
-    total1 = total %>% filter(State == input$OddsState)
-    total2 = total %>% filter(State == input$OddsState2)
-    
-    total1 = as.numeric(total1[1,2])
-    total2 = as.numeric(total2[1,2])
-    
-    if(input$exclude == TRUE && deactivate == 4) {
-      total1 = sum(total$`sum(Population)`)
-    }
-    
-    if(input$exclude2 == TRUE && deactivate2 == 4) {
-      total2 = sum(total$`sum(Population)`)
-    }
-    
-    
-    #Creating the table itself
-    contingenceTB = data.frame ("Titles" = c("First Condition", "Second Condition", "Total"),
-                                "Diseased" = c(firstline[1], secondline[1], firstline[1]+secondline[1]), 
-                                "Non.Diseased" =c(total1 - firstline[1], total2 - secondline[1], total1-firstline[1]+ total2 - secondline[1]),
-                                "Total" = c(as.numeric(total1), total2, total1+total2))
-    
-    write.csv(contingenceTB, "data/Contingence.csv")
-    contingenceTB
-    
-  })
   
+  contingenceTB = reactive ({
+  
+  
+  #Building the contingence Table
+  
+  #Defining which is the value to exclude here
+  
+  deactivate = 0
+  deactivate2 = 0
+  
+  if (input$excluded == "Gender" && input$exclude == TRUE) {deactivate = 1}
+  if (input$excluded == "Age"&& input$exclude == TRUE) {deactivate = 2}
+  if (input$excluded == "Disease"&& input$exclude == TRUE) {deactivate = 3}
+  if (input$excluded == "State"&& input$exclude == TRUE) {deactivate = 4}
+  if (input$excluded == "Ethnia"&& input$exclude == TRUE) {deactivate = 5}
+  if(input$excluded == "Year" && input$exclude == TRUE ){deactivate = 6}
+  
+  if (input$excluded2 == "Gender" && input$exclude2 == TRUE) {deactivate2 = 1}
+  if (input$excluded2 == "Age"&& input$exclude2 == TRUE) {deactivate2 = 2}
+  if (input$excluded2 == "Disease"&& input$exclude2 == TRUE) {deactivate2 = 3}
+  if (input$excluded2 == "State"&& input$exclude2 == TRUE) {deactivate2 = 4}
+  if (input$excluded2 == "Ethnia"&& input$exclude2 == TRUE) {deactivate2 = 5}
+  if(input$excluded2 == "Year" && input$exclude2 == TRUE ){deactivate2 = 6}
+  
+  toggleState("OddsGender", input$exclude != TRUE | deactivate != 1)
+  toggleState("OddsGender2", input$exclude2 != TRUE | deactivate2 != 1)
+  toggleState("OddsAge", input$exclude != TRUE | deactivate!= 2)
+  toggleState("OddsAge2", input$exclude2 != TRUE | deactivate2 != 2)
+  toggleState("OddsDisease", input$exclude != TRUE | deactivate != 3)
+  toggleState("OddsDisease2", input$exclude2 != TRUE | deactivate2 != 3)
+  toggleState("OddsState", input$exclude != TRUE | deactivate != 4)
+  toggleState("OddsState2", input$exclude2 != TRUE | deactivate2!= 4)
+  toggleState("OddsEthnia", input$exclude != TRUE | deactivate != 5)
+  toggleState("OddsEthnia2", input$exclude2 != TRUE | deactivate2!= 5)
+  toggleState("OddsYear", input$exclude != TRUE | deactivate != 6)
+  toggleState("OddsYear2", input$exclude2 != TRUE | deactivate2!= 6)
+  
+  
+  #Defining the first condition  
+  
+  temp = STD
+  
+  if (deactivate == 1){} 
+  else {temp = temp %>% filter(Gender == input$OddsGender)}
+  
+  if (deactivate == 2){}
+  else {temp= temp %>% filter(Age_Code == input$OddsAge)}
+  
+  if(deactivate == 3){}
+  else {temp = temp %>% filter (Disease == input$OddsDisease)}
+  
+  if (deactivate == 4){}
+  else {temp = temp %>% filter (State == input$OddsState)}
+  
+  if (deactivate == 5){}
+  else {temp = temp %>% filter (`Race/Ethnicity` == input$OddsEthnia)}
+  
+  if(deactivate ==6){}
+  else {temp = temp %>% filter (Year == input$OddsYear)}
+  
+  if (deactivate == 6){
+    temp = temp %>% group_by (Disease) %>% summarise(sum(STD_Cases))
+  }
+  
+  if(input$exclude == FALSE) {
+    temp = temp %>% group_by(Disease) %>% summarise (sum(STD_Cases))
+    deactivate =7 #To avoid the error with unknown column
+  }
+  
+  if(deactivate < 6){
+    temp = temp %>% group_by (`Year`) %>% summarise(sum(STD_Cases))
+  }
+  
+  
+  
+  #Creating the first value on the first line
+  
+  firstline = c()
+  if(is.na (as.numeric(temp[1,2])))
+  {firstline =c(firstline, 0)}
+  else  
+  {firstline = c(firstline, as.numeric(temp[1,2]))}
+  
+  #Defining the second condition
+  
+  temp2 = STD
+  
+  if (deactivate2 == 1){} 
+  else {temp2 = temp2 %>% filter(Gender == input$OddsGender2)}
+  
+  if (deactivate2 == 2){}
+  else {temp2= temp2 %>% filter(Age_Code == input$OddsAge2)}
+  
+  if(deactivate2 == 3){}
+  else {temp2 = temp2 %>% filter (Disease == input$OddsDisease2)}
+  
+  if (deactivate2 == 4){}
+  else {temp2 = temp2 %>% filter (State == input$OddsState2)}
+  
+  if (deactivate2 == 5){}
+  else {temp2 = temp2 %>% filter (`Race/Ethnicity` == input$OddsEthnia2)}
+  
+  if(deactivate2 ==6){}
+  else {temp2 = temp2 %>% filter (Year == input$OddsYear2)}
+  
+  if (deactivate2 == 6){
+    temp2 = temp2 %>% group_by (Disease) %>% summarise(sum(STD_Cases))
+  }
+  
+  if(input$exclude2 == FALSE) {
+    temp2 = temp2 %>% group_by(Disease) %>% summarise (sum(STD_Cases))
+    deactivate2 =7 #To avoid the error with unknown column
+  }
+  
+  if(deactivate2 < 6){
+    temp2 = temp2 %>% group_by (`Year`) %>% summarise(sum(STD_Cases))
+  }
+  
+  #Creating the first value on second line
+  secondline = c()
+  if(is.na (as.numeric(temp2[1,2])))
+  {secondline =c(secondline, 0)}
+  else  
+  {secondline = c(secondline, as.numeric(temp2[1,2]))}
+  
+  #Creating the total values
+  total = STD %>% group_by(State) %>% summarise (sum(Population))
+  total1 = total %>% filter(State == input$OddsState)
+  total2 = total %>% filter(State == input$OddsState2)
+  
+  total1 = as.numeric(total1[1,2])
+  total2 = as.numeric(total2[1,2])
+  
+  if(input$exclude == TRUE && deactivate == 4) {
+    total1 = sum(total$`sum(Population)`)
+  }
+  
+  if(input$exclude2 == TRUE && deactivate2 == 4) {
+    total2 = sum(total$`sum(Population)`)
+  }
+  
+  
+  #Creating the table itself
+  contingenceTB = data.frame ("Titles" = c("First Condition", "Second Condition", "Total"),
+                              "Diseased" = c(firstline[1], secondline[1], firstline[1]+secondline[1]), 
+                              "Non.Diseased" =c(total1 - firstline[1], total2 - secondline[1], total1-firstline[1]+ total2 - secondline[1]),
+                              "Total" = c(as.numeric(total1), total2, total1+total2))
+})
+  
+  output$contingence = renderDT({
+    contingenceTB ()
+  })
+
   onclick ("RRbutton", {
     
-    contingence <- read_csv("data/Contingence.csv",
-                            col_types = cols(X1 = col_skip()))
+    contingence = contingenceTB ()
     
     if(contingence [1,4] !=0 && contingence[2,2] != 0)
     {
@@ -425,8 +427,7 @@ server <- function(input, output, session) {
   
   onclick ("ORbutton", {
     
-    contingence <- read_csv("data/Contingence.csv",
-                            col_types = cols(X1 = col_skip()))
+    contingence = contingenceTB ()
     
     if(contingence [1,3] !=0 && contingence[2,2] != 0)
     {
@@ -437,10 +438,183 @@ server <- function(input, output, session) {
   })
   
   onclick("MapRRbutton",{
+    allstateRR = STD %>% filter(Gender == input$OddsGender2) %>% 
+      filter(Age_Code == input$OddsAge2) %>% 
+      filter(Disease == input$OddsDisease2) %>% 
+      filter(`Race/Ethnicity` == input$OddsEthnia2) %>% 
+      filter (Year == input$OddsYear2)
     
-    contingence <- read_csv("data/Contingence.csv",
-                            col_types = cols(X1 = col_skip()))
+    difference = tibble(Disease = "",
+      State = setdiff(states$name,allstateRR$State),
+      Year = 0,
+      `Race/Ethnicity` = "",
+      Age ="",
+      Age_Code = "",
+      STD_Cases = 0,
+      Population = 0,
+      Gender = "",
+      Gender_Code = ""
+    )
+    
+    #Fusionning the two data and ordering to use with the map
+    allstateRR = rbind(allstateRR,difference)
+    allstateRR = allstateRR[order(match(allstateRR$State, states$name)),]
+    
+    total = STD %>% group_by(State) %>% summarise (sum(Population))
+    difference = tibble(State = setdiff(states$name,total$State),
+                        `sum(Population)` = 0
+    )
+    total = rbind(total, difference)
+    
+    contingence = contingenceTB()
+    allstateRR = allstateRR %>%  mutate (RR = ifelse(allstateRR$Population != 0 & allstateRR$STD_Cases != 0,
+                                      as.numeric((contingence[1,2] / contingence [1,4]) / (STD_Cases / total$`sum(Population)`)),
+                                      0))
+    
+    ## Preparing the legend
+    maxRR = max(as.numeric(allstateRR$RR))
+    if (maxRR !=0){
+    stepLegend = (maxRR / 9)
+    legendRow = 0
+    
+    for (i in 1:9)
+    {
+      legendRow = c(legendRow, 0 + stepLegend*i)
+    }
+    
+    legendRow[10] = legendRow[10] + 0.05
+    
+    }else{legendRow = 1:10}
+    
+    bins <- legendRow
+    pal <- colorBin("YlGnBu", domain = allstateRR$RR, bins = bins)
+    
+    labels <- sprintf(
+      "<strong>%s</strong><br/>Chances to have the first condition compared to second one : %g ",
+      states$name, allstateRR$RR
+    ) %>% lapply(htmltools::HTML)
+    
+    leafletProxy ("map2")  %>% addPolygons(data = states,
+                                          fillColor = ~pal(allstateRR$RR),
+                                          weight = 1,
+                                          opacity = 0.7,
+                                          color = "grey",
+                                          dashArray = "3",
+                                          fillOpacity = 0.7,
+                                          highlight = highlightOptions(
+                                            weight = 5,
+                                            color = "#666",
+                                            dashArray = "",
+                                            fillOpacity = 0.85,
+                                            bringToFront = TRUE),
+                                          label = labels,
+                                          labelOptions = labelOptions(
+                                            style = list("font-weight" = "normal", padding = "3px 8px"),
+                                            textsize = "15px",
+                                            direction = "auto")) %>%  clearControls() %>% addLegend(pal = pal, values = allstateRR$RR, opacity = 0.85,
+                                                                                                    title = "Risk Ratio",
+                                                                                                    position = "bottomright")
+
+
+    
+    
   }) 
+  
+  onclick("MapORbutton",{
+    
+    allstateOR = STD %>% filter(Gender == input$OddsGender2) %>% 
+      filter(Age_Code == input$OddsAge2) %>% 
+      filter(Disease == input$OddsDisease2) %>% 
+      filter(`Race/Ethnicity` == input$OddsEthnia2) %>% 
+      filter (Year == input$OddsYear2)
+    
+    difference = tibble(Disease = "",
+                        State = setdiff(states$name,allstateOR$State),
+                        Year = 0,
+                        `Race/Ethnicity` = "",
+                        Age ="",
+                        Age_Code = "",
+                        STD_Cases = 0,
+                        Population = 0,
+                        Gender = "",
+                        Gender_Code = ""
+    )
+    
+    #Fusionning the two data and ordering to use with the map
+    allstateOR = rbind(allstateOR,difference)
+    allstateOR = allstateOR[order(match(allstateOR$State, states$name)),]
+    
+    total = STD %>% group_by(State) %>% summarise (sum(Population))
+    difference = tibble(State = setdiff(states$name,total$State),
+                        `sum(Population)` = 0
+    )
+    total = rbind(total, difference)
+    
+    contingence = contingenceTB()
+    allstateOR = allstateOR %>%  mutate (OR = ifelse(allstateOR$Population != 0 & allstateOR$STD_Cases != 0,
+                                                     as.numeric((contingence[1,2] / contingence [1,3]) / (STD_Cases / (total$`sum(Population)`- STD_Cases))),
+                                                     0))
+    
+    ## Preparing the legend
+    maxOR = max(as.numeric(allstateOR$OR))
+    if (maxOR !=0){
+      stepLegend = (maxOR / 9)
+      legendRow = 0
+      
+      for (i in 1:9)
+      {
+        legendRow = c(legendRow, 0 + stepLegend*i)
+      }
+      
+      legendRow[10] = legendRow[10] + 0.05
+      
+    }else{legendRow = 1:10}
+    
+    bins <- legendRow
+    pal <- colorBin("Oranges", domain = allstateOR$OR, bins = bins)
+    
+    labels <- sprintf(
+      "<strong>%s</strong><br/>Odds Ratio: %g ",
+      states$name, allstateOR$OR
+    ) %>% lapply(htmltools::HTML)
+    
+    leafletProxy ("map2")  %>% addPolygons(data = states,
+                                           fillColor = ~pal(allstateOR$OR),
+                                           weight = 1,
+                                           opacity = 0.7,
+                                           color = "grey",
+                                           dashArray = "3",
+                                           fillOpacity = 0.7,
+                                           highlight = highlightOptions(
+                                             weight = 5,
+                                             color = "#666",
+                                             dashArray = "",
+                                             fillOpacity = 0.85,
+                                             bringToFront = TRUE),
+                                           label = labels,
+                                           labelOptions = labelOptions(
+                                             style = list("font-weight" = "normal", padding = "3px 8px"),
+                                             textsize = "15px",
+                                             direction = "auto")) %>%  clearControls() %>% addLegend(pal = pal, values = allstateOR$OR, opacity = 0.85,
+                                                                                                     title = "Odds Ratio",
+                                                                                                     position = "bottomright")
+    
+    
+    
+  })
+  
+  output$map2 = renderLeaflet ({
+    states <- geojsonio::geojson_read("geojson/us-states.json", what = "sp")
+    m <- leaflet(states, options = leafletOptions(minZoom = 4, maxZoom = 7)) %>%
+      setView(-96, 37.8, 4) %>%
+      addProviderTiles("MapBox", options = providerTileOptions(
+        id = "mapbox.light",
+        accessToken = Sys.getenv('MAPBOX_ACCESS_TOKEN'))) %>% addTiles() %>% 
+      setMaxBounds( lng1 = -90
+                    , lat1 = 70
+                    , lng2 = -100
+                    , lat2 = 10 )
+  })
   
   output$curve = renderPlotly({
     
@@ -510,11 +684,11 @@ dateFormat  YYYY-MM-DD
                           Bill Clinton:")
     }
     
-    if (input$year >= 1993 & input$year <=2001){
-      stringtimeline = paste0(stringtimeline,"active,Clinton ,1993-01-20, 2001-01-20
+    if (input$year >= 1996 & input$year <=2001){
+      stringtimeline = paste0(stringtimeline,"active,Clinton ,1996-01-20, 2001-01-20
                           George W Bush:")
     }else{
-      stringtimeline = paste0(stringtimeline, "done,Clinton , 1993-01-20, 2001-01-20
+      stringtimeline = paste0(stringtimeline, "done,Clinton , 1996-01-20, 2001-01-20
                           George W Bush:")
     }
     
@@ -526,10 +700,10 @@ dateFormat  YYYY-MM-DD
                           Barack Obama:")
     }
     
-    if (input$year >= 2009 & input$year <=2017){
-      stringtimeline = paste0(stringtimeline,"active,Obama,2009-01-20, 2017-01-20")
+    if (input$year >= 2009 & input$year <=2014){
+      stringtimeline = paste0(stringtimeline,"active,Obama,2009-01-20, 2014-01-20")
     }else{
-      stringtimeline = paste0(stringtimeline, "done,Obama,2009-01-20, 2017-01-20")
+      stringtimeline = paste0(stringtimeline, "done,Obama,2009-01-20, 2014-01-20")
     }
     
     timeline = mermaid(stringtimeline)

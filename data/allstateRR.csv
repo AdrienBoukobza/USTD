@@ -1,0 +1,53 @@
+"","Disease","State","Year","Race/Ethnicity","Age","Age_Code","STD_Cases","Population","Gender","Gender_Code","RR"
+"1","","Alabama",0,"","","",0,0,"","",0
+"2","Chlamydia","Alaska",1996,"American Indian or Alaska Native","0-14 years","0-14",2,17081,"Male","M",0.00121364236044072
+"3","Chlamydia","Arizona",1996,"American Indian or Alaska Native","0-14 years","0-14",1,39958,"Male","M",0.00567820636244837
+"4","","Arkansas",0,"","","",0,0,"","",0
+"5","Chlamydia","California",1996,"American Indian or Alaska Native","0-14 years","0-14",1,26691,"Male","M",0.00379290770359151
+"6","","Colorado",0,"","","",0,0,"","",0
+"7","","Connecticut",0,"","","",0,0,"","",0
+"8","","Delaware",0,"","","",0,0,"","",0
+"9","","District of Columbia",0,"","","",0,0,"","",0
+"10","","Florida",0,"","","",0,0,"","",0
+"11","","Georgia",0,"","","",0,0,"","",0
+"12","","Hawaii",0,"","","",0,0,"","",0
+"13","","Idaho",0,"","","",0,0,"","",0
+"14","","Illinois",0,"","","",0,0,"","",0
+"15","","Indiana",0,"","","",0,0,"","",0
+"16","","Iowa",0,"","","",0,0,"","",0
+"17","","Kansas",0,"","","",0,0,"","",0
+"18","","Kentucky",0,"","","",0,0,"","",0
+"19","","Louisiana",0,"","","",0,0,"","",0
+"20","","Maine",0,"","","",0,0,"","",0
+"21","","Maryland",0,"","","",0,0,"","",0
+"22","","Massachusetts",0,"","","",0,0,"","",0
+"23","","Michigan",0,"","","",0,0,"","",0
+"24","Chlamydia","Minnesota",1996,"American Indian or Alaska Native","0-14 years","0-14",2,9158,"Male","M",0.00065069590404052
+"25","","Mississippi",0,"","","",0,0,"","",0
+"26","","Missouri",0,"","","",0,0,"","",0
+"27","Chlamydia","Montana",1996,"American Indian or Alaska Native","0-14 years","0-14",3,9301,"Male","M",0.000440570910932582
+"28","","Nebraska",0,"","","",0,0,"","",0
+"29","","Nevada",0,"","","",0,0,"","",0
+"30","Chlamydia","New Hampshire",1996,"American Indian or Alaska Native","0-14 years","0-14",1,304,"Male","M",4.31997280690802e-05
+"31","Chlamydia","New Jersey",1996,"American Indian or Alaska Native","0-14 years","0-14",1,1868,"Male","M",0.000265450960635006
+"32","","New Mexico",0,"","","",0,0,"","",0
+"33","","New York",0,"","","",0,0,"","",0
+"34","","North Carolina",0,"","","",0,0,"","",0
+"35","Chlamydia","North Dakota",1996,"American Indian or Alaska Native","0-14 years","0-14",1,5455,"Male","M",0.000775179330976422
+"36","","Ohio",0,"","","",0,0,"","",0
+"37","Chlamydia","Oklahoma",1996,"American Indian or Alaska Native","0-14 years","0-14",3,43908,"Male","M",0.00207983953953637
+"38","Chlamydia","Oregon",1996,"American Indian or Alaska Native","0-14 years","0-14",3,6048,"Male","M",0.000286482407194953
+"39","","Pennsylvania",0,"","","",0,0,"","",0
+"40","","Rhode Island",0,"","","",0,0,"","",0
+"41","","South Carolina",0,"","","",0,0,"","",0
+"42","Chlamydia","South Dakota",1996,"American Indian or Alaska Native","0-14 years","0-14",1,11386,"Male","M",0.00161800034142943
+"43","","Tennessee",0,"","","",0,0,"","",0
+"44","","Texas",0,"","","",0,0,"","",0
+"45","","Utah",0,"","","",0,0,"","",0
+"46","","Vermont",0,"","","",0,0,"","",0
+"47","","Virginia",0,"","","",0,0,"","",0
+"48","Chlamydia","Washington",1996,"American Indian or Alaska Native","0-14 years","0-14",1,13121,"Male","M",0.00186455142103421
+"49","","West Virginia",0,"","","",0,0,"","",0
+"50","Chlamydia","Wisconsin",1996,"American Indian or Alaska Native","0-14 years","0-14",1,6960,"Male","M",0.000989046405792098
+"51","","Wyoming",0,"","","",0,0,"","",0
+"52","","Puerto Rico",0,"","","",0,0,"","",0
