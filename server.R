@@ -16,6 +16,7 @@ library(shinythemes)
 library(DiagrammeR)
 library(prophet)
 library(tidyr)
+library(shinycustomloader)
 
 STD = readRDS("data/STD.rds")
 
@@ -51,7 +52,7 @@ ui <- fluidPage(theme = shinytheme("flatly"),
                            tabPanel ("Curve Explorer",
                                      selectInput("statecurve", "State", states$name),
                                      selectInput("diseasecurve", "Disease", varsDisease[1:3]),
-                                     plotlyOutput("curve",width = "100%", height = "400px")
+                                     withLoader(plotlyOutput("curve",width = "100%", height = "400px"), type = 'html', loader = "dnaspin")
                            ),
                            
                            tabPanel("Risk calculator",
@@ -117,9 +118,9 @@ server <- function(input, output, session) {
       addProviderTiles("MapBox", options = providerTileOptions(
         id = "mapbox.light",
         accessToken = Sys.getenv('MAPBOX_ACCESS_TOKEN'))) %>% addTiles() %>% 
-      setMaxBounds( lng1 = -90
-                    , lat1 = 70
-                    , lng2 = -100
+      setMaxBounds( lng1 = -0
+                    , lat1 = 80
+                    , lng2 = -180
                     , lat2 = 10 )
   })
   
@@ -628,7 +629,7 @@ server <- function(input, output, session) {
     future = make_future_dataframe(newplot, periods= 3650)
     forecast <- predict(newplot, future)
     tail(forecast[c('ds', 'yhat', 'yhat_lower', 'yhat_upper')])
-    plot(newplot, forecast)
+    plot(newplot, forecast, xlabel= "Year", ylabel = "Number of cases")
   })
   
   output$curvetotal = renderPlotly({
@@ -642,9 +643,14 @@ server <- function(input, output, session) {
   })
   
   output$curvefilter = renderPlotly({
-    plot3 = STD %>% filter(Age_Code == input$age) %>% 
-      filter(Disease == input$disease) %>%
-      filter(Gender == input$gender)
+    
+    plot3 = STD
+
+    if(input$age != "All") {plot3 = plot3 %>% filter(Age_Code == input$age)}
+    
+    if(input$gender != "All") {plot3 = plot3 %>% filter(Gender == input$gender)}
+    
+    if(input$disease != "All") {plot3 = plot3 %>% filter(Disease == input$disease)}
     
     plot3  = plot3 %>% group_by(Year) %>% summarise (sum(STD_Cases))
     colnames(plot3) = c("Year", "STD_Cases")
