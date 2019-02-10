@@ -198,7 +198,7 @@ server <- function(input, output, session) {
       legendRow = c(legendRow, 0 + stepLegend*i)
     }
     
-    legendRow[10] = legendRow[10] + 0.05
+    legendRow[10] = legendRow[10] + 0.05 #Using it to have all the data in range
     
     bins <- legendRow
     pal <- colorBin("YlOrRd", domain = STD1$RateCalc, bins = bins)
@@ -250,6 +250,7 @@ server <- function(input, output, session) {
   })
   
   output$mapTable = renderDT({
+    #using the factor in data table
     
     STD$Disease = as.factor(STD$Disease)
     STD$State = as.factor (STD$State)
