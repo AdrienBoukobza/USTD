@@ -43,16 +43,20 @@ ui <- fluidPage(theme = shinytheme("flatly"),
                                      ),
                                      DiagrammeROutput("timeline", width = 1000, height= 300),
                                      plotlyOutput("curvetotal", width = "975", height = 300),
-                                     plotlyOutput("curvefilter", width = "975", height = 300)
+                                     plotlyOutput("curvefilter", width = "975", height = 300),
+                                     verbatimTextOutput("firsttext")
                                      
                            ),
                            
-                           tabPanel("Clinics explorer"),
+                           tabPanel("Clinics explorer",
+                                    verbatimTextOutput("secondtext")
+                                    ),
                            
                            tabPanel ("Curve Explorer",
                                      selectInput("statecurve", "State", states$name),
                                      selectInput("diseasecurve", "Disease", varsDisease[1:3]),
-                                     withLoader(plotlyOutput("curve",width = "100%", height = "400px"), type = 'html', loader = "dnaspin")
+                                     withLoader(plotlyOutput("curve",width = "100%", height = "400px"), type = 'html', loader = "dnaspin"),
+                                     verbatimTextOutput("thirdtext")
                            ),
                            
                            tabPanel("Risk calculator",
@@ -98,12 +102,14 @@ ui <- fluidPage(theme = shinytheme("flatly"),
                                               actionButton("MapORbutton", "Rendering map with OR")
                                       )
                                     ),
-                                    leafletOutput("map2", width = "100%", height = "700")
+                                    leafletOutput("map2", width = "100%", height = "700"),
+                                    verbatimTextOutput("fourthtext")
                                     
                            ),
                            
                            tabPanel("Data Explorer",
-                                    DTOutput ("mapTable")
+                                    DTOutput ("mapTable"),
+                                    verbatimTextOutput("fifthtext")
                            )
                            
                 )
@@ -626,10 +632,23 @@ server <- function(input, output, session) {
     plot$ds = paste (plot$ds, "-01-01", sep = "")
     newplot = prophet(plot)
     
-    future = make_future_dataframe(newplot, periods= 3650)
+    future = make_future_dataframe(newplot, periods= 10, freq='year')
     forecast <- predict(newplot, future)
-    tail(forecast[c('ds', 'yhat', 'yhat_lower', 'yhat_upper')])
-    plot(newplot, forecast, xlabel= "Year", ylabel = "Number of cases")
+    
+    new_data <- forecast %>%   
+      filter(ds >= as.Date('2014-12-31')) %>%  
+      mutate(ds = as.Date(ds),  
+             y = yhat)
+    
+    to_plot <- plot %>% mutate(ds = as.Date(ds)) %>%  
+      bind_rows(new_data)
+    
+    p <- ggplot(data = to_plot, aes(x=ds, y = y, ymin = yhat_lower, ymax = yhat_upper))  +  
+      geom_ribbon(alpha = 0.2) +
+      geom_line(color = "blue")+ 
+      xlab ("Year")+
+      ylab ("Number of cases")+
+      labs(title = "Prevision of evolution of number of cases")
   })
   
   output$curvetotal = renderPlotly({
@@ -724,6 +743,23 @@ dateFormat  YYYY-MM-DD
     ))
     timeline
   })
-}
+
+  output$firsttext = renderText ("This project is a part of the evaluation of our first year of master about biomedical computer science.
+                                 \nThe recent raise of STD in the USA is a very hot topic because it could represent a major public health issue within few years.
+                                 \nAll our data come from the US CDC site, using the WONDER tool.
+                                 \nTo study that, we first made a map to have a global point of view about this topic.")
+  
+  output$secondtext = renderText ("Secundary we would like to search for differences beetween the Amercian States in matter of politics, budgets or free clinics repartition that would explain the differences we observed.")
+  
+  output$thirdtext = renderText("The third point is a very simple prevision of the evolution of the number of cases within few years, showing how the cases should continue raising or should go down.
+                                \nCAUTION: These results are only mathematical previsions of the cases, and don't have a real predictive value.")
+  
+  output$fourthtext = renderText("The fourth point allows the user to compare two very specific populations in the USA to see the chances of being diseased when you are on the first condition compared to the second one.
+                                 \nCAUTION: The risk calculator only works when the two diseased cases are different from 0 and the mapping option only works when the first disease condition is different from 0.
+                                 \nRisk ratio is the probability of the outcome of an event in an exposed group compared to a non exposed one.
+                                 \nOdds Ratio is quite based on the Risk ratio but also uses the inverse probability of an event to calculate a value.")
+  
+  output$fifthtext = renderText("Finally, the user can consult the data and copy it for his own study.")
+  }
 # Run the application 
 shinyApp(ui = ui, server = server)

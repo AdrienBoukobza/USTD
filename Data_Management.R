@@ -178,6 +178,5 @@ temp = which (is.na(STD$"Population"))
 if (length(temp) != 0) #Vérifiyng that the vector isn't empty
 {STD = STD[-c(temp),]}
 
-write.csv(STD, "data/STD.csv")
 saveRDS(STD, "data/STD.rds")
 
