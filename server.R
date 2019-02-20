@@ -20,18 +20,16 @@ library(shinycustomloader)
 
 STD = readRDS("data/STD.rds")
 
-ui <- fluidPage(theme = shinytheme("flatly"),
+ui <- function (request){
+  fluidPage(theme = shinytheme("flatly"),
                 
                 shinyjs::useShinyjs(),
                 
                 navbarPage("USTD",
                            
                            tabPanel ("Home",
-                                     verbatimTextOutput("firsttext"),
-                                     verbatimTextOutput("secondtext"),
-                                     verbatimTextOutput("thirdtext"),
-                                     verbatimTextOutput("fourthtext"),
-                                     verbatimTextOutput("fifthtext")
+                                     verbatimTextOutput("hometext"),
+                                     bookmarkButton()
                                      ),
                            
                            tabPanel ("Interactive Map",
@@ -117,12 +115,17 @@ ui <- fluidPage(theme = shinytheme("flatly"),
                            tabPanel("Data Explorer",
                                     DTOutput ("mapTable")
                            ),
-                           tabPanel("About"),
-                           tabPanel("Licence")
+                           tabPanel("About",
+                                    verbatimTextOutput("abouttext")
+                                    ),
+                           tabPanel("Licence",
+                                    verbatimTextOutput("licencetext"),
+                                    verbatimTextOutput('licencetext2')
+                                    )
                            
                 )
 )
-
+}
 server <- function(input, output, session) {
   
   output$map = renderLeaflet ({
@@ -647,22 +650,46 @@ dateFormat  YYYY-MM-DD
     timeline
   })
 
-  output$firsttext = renderText ("This project is a part of the evaluation of our first year of master about biomedical computer science.
-                                 \nThe recent raise of STD in the USA is a very hot topic because it could represent a major public health issue within few years.
-                                 \nAll our data come from the US CDC site, using the WONDER tool.
-                                 \nTo study that, we first made a map to have a global point of view about this topic.")
+  output$abouttext = renderText ("Us : We are two students in the French University Paris Descartes.
+                                 \nThis project is a part of the evaluation of our first year of master about biomedical computer science.
+                                 \nAll our data come from the US CDC site, using the WONDER tool.")
   
-  output$secondtext = renderText ("Secundary we would like to search for differences beetween the Amercian States in matter of politics, budgets or free clinics repartition that would explain the differences we observed.")
+  output$hometext = renderText ("The recent raise of STD in the USA is a very hot topic because it could represent a major public health issue within few years. That's why we decided to examine the data about this subject.
+                                  \nFirst, to have a global overview of the importance of STD in the USA we chose to make a map showing the density of STD in each state on 1000 inhabitants.
+                                  \nThe second point, is a simple computed prevision to see how the number of cases should evolve in few years in each state and for each disease.
+                                  \nCAUTION: These results are only mathematical previsions of the cases, and don't have a real predictive value.
+                                  \nThe third point allows the user to compare the chances to have a specific disease for a specific population in each state.
+                                  \nCAUTION: The risk calculator only works when the two diseased cases are different from 0 and the mapping option only works when the first disease condition is different from 0.
+                                  \nRisk ratio is the probability of the outcome of an event in an exposed group compared to a non exposed one.
+                                  \nOdds Ratio is quite based on the Risk ratio but also uses the inverse probability of an event to calculate a value.
+                                  \nFinally, the user can consult the data and copy it for his own study.")
   
-  output$thirdtext = renderText("The third point is a very simple prevision of the evolution of the number of cases within few years, showing how the cases should continue raising or should go down.
-                                \nCAUTION: These results are only mathematical previsions of the cases, and don't have a real predictive value.")
-  
-  output$fourthtext = renderText("The fourth point allows the user to compare two very specific populations in the USA to see the chances of being diseased when you are on the first condition compared to the second one.
-                                 \nCAUTION: The risk calculator only works when the two diseased cases are different from 0 and the mapping option only works when the first disease condition is different from 0.
-                                 \nRisk ratio is the probability of the outcome of an event in an exposed group compared to a non exposed one.
-                                 \nOdds Ratio is quite based on the Risk ratio but also uses the inverse probability of an event to calculate a value.")
-  
-  output$fifthtext = renderText("Finally, the user can consult the data and copy it for his own study.")
+  output$licencetext = renderText("CDC WONDER is a public service developed and operated by the Centers for Disease Control and Prevention, an agency of United States federal government. The public web site at http://wonder.cdc.gov is in the public domain, and only provides access to public use data and information. You may access the information freely, and use, copy, distribute or publish this information without additional or explicit permission. Please do provide a citation to credit the authors and/or data providers. When referring to a written article or document, please cite the item as you would any other document on the world wide web.
+
+All of CDC WONDER's datasets are covered by the following policy:
+These data are provided for the purpose of statistical reporting and analysis only. The CDC/ATSDR Policy on Releasing and Sharing Data prohibits linking these data with other data sets or information for the purpose of identifying an individual. If the identity of a individual described in a data set is discovered inadvertently, make no disclosure or other use of this information and report the discovery to:
+                                  
+                                  Associate Director for Science
+                                  Office of Science Policy and Technology Transfer, CDC
+                                  Mail Stop D50
+                                  Phone: 404-639-7240")
+  output$licencetext2 = renderText({"USTD, Visualizing shiny program of STD.
+                                   
+    Copyright (C) 2019  Adrien Boukobza & François-Xavier Durand
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+    Also add information on how to contact you by electronic and paper mail."})
   }
 # Run the application 
-shinyApp(ui = ui, server = server)
+shinyApp(ui = ui, server = server, enableBookmarking = "server")
