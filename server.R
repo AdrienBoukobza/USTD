@@ -20,7 +20,7 @@ library(shinycustomloader)
 
 STD = readRDS("data/STD.rds")
 
-ui <- function (request){
+ui <- function (){
   fluidPage(theme = shinytheme("flatly"),
                 
                 shinyjs::useShinyjs(),
@@ -28,14 +28,13 @@ ui <- function (request){
                 navbarPage("USTD",
                            
                            tabPanel ("Home",
-                                     verbatimTextOutput("hometext"),
-                                     bookmarkButton()
+                                     verbatimTextOutput("hometext")
                                      ),
                            
                            tabPanel ("Interactive Map",
                                      leafletOutput("map", width = "100%", height = "700"),
                                      absolutePanel(id = "controls", class = "panel panel-default", fixed = FALSE,
-                                                   draggable = FALSE, top = 80, left = "auto", right = 30, bottom = "auto",
+                                                   draggable = TRUE, top = 80, left = "auto", right = 30, bottom = "auto",
                                                    width = 340, height = "auto", align = "center",
                                                    h2("STD in the USA"),
                                                    
@@ -45,7 +44,11 @@ ui <- function (request){
                                                                min = 1996, max = 2014,
                                                                value = 2014, animate =
                                                                  animationOptions(interval = 1500, loop = FALSE)),
-                                                   selectInput ("age", "Age class", varsAge, selected = "All")
+                                                   selectInput ("age", "Age class", varsAge, selected = "All"),
+                                                   actionButton("preset1", "Chlamydia in young adult female"),
+                                                   actionButton("preset2", "Minimum of Gonorrhea"),
+                                                   actionButton("preset3", "Minimum of Syphilis")
+
 
                                                    
                                      ),
@@ -200,7 +203,7 @@ server <- function(input, output, session) {
     
     ## Preparing the legend
     
-    stepLegend = 6
+    stepLegend = 7
     legendRow = c(0)
     
     for (i in 1:9)
@@ -690,6 +693,27 @@ These data are provided for the purpose of statistical reporting and analysis on
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
     Also add information on how to contact you by electronic and paper mail."})
+  
+  onclick("preset1",{
+    updateSelectInput(session, "disease", selected = "Chlamydia")
+    updateSelectInput(session, "gender", selected = "Female")
+    updateSelectInput(session, "age", selected = "20-24")
+    updateSliderInput(session, "year", value = 2014)
+  })
+  
+  onclick("preset2",{
+    updateSelectInput(session, "disease", selected = "Gonorrhea")
+    updateSelectInput(session, "gender", selected = "All")
+    updateSelectInput(session, "age", selected = "All")
+    updateSliderInput(session, "year", value = 2009)
+  })
+  
+  onclick("preset3",{
+    updateSelectInput(session, "disease", selected = "Primary and Secondary Syphilis")
+    updateSelectInput(session, "gender", selected = "All")
+    updateSelectInput(session, "age", selected = "All")
+    updateSliderInput(session, "year", value = 2001)
+  })
   }
 # Run the application 
-shinyApp(ui = ui, server = server, enableBookmarking = "server")
+shinyApp(ui = ui, server = server)
