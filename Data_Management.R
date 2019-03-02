@@ -1,42 +1,6 @@
 library (readr)
 library (dplyr)
 
-#Creating the inputs
-
-states <- geojsonio::geojson_read("geojson/us-states.json", what = "sp")
-
-varsDisease = c(
-  "Chlamydia" = "Chlamydia",
-  "Gonorrhea" = "Gonorrhea",
-  "Primary and Secondary Syphilis" = "Primary and Secondary Syphilis",
-  "All" = "All"
-)
-
-varsGender = c(
-  "Male" = "Male",
-  "Female" = "Female",
-  "All" = "All"
-)
-
-varsAge = c(
-  "0-14 years" = "0-14",
-  "15-19 years" = "15-19",
-  "20-24 years" = "20-24",
-  "25-29 years" = "25-29",
-  "30-34 years" = "30-34",
-  "35-39 years" = "35-39",
-  "More than 40 years" = "40+",
-  "All" = "All"
-)
-
-varsEthnia = c(
-  "American Indian or Alaska Native" = "American Indian or Alaska Native",
-  "Asian or Pacific Islander" = "Asian or Pacific Islander",
-  "Black or African American" = "Black or African American",
-  "Hispanic" = "Hispanic" , 
-  "White" = "White"
-)
-
 #Importing STD data
 
 ChlamydiaF <- read_delim("data/ChlamydiaF.txt", 

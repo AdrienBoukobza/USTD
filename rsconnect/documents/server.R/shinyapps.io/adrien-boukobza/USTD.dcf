@@ -1,0 +1,13 @@
+name: USTD
+title: USTD
+username:
+account: adrien-boukobza
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 735614
+bundleId: 1894030
+url: https://adrien-boukobza.shinyapps.io/USTD/
+when: 1550951227.23647
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: README.md
