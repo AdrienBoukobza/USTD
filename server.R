@@ -62,6 +62,9 @@ server <- function(input, output, session)
       # Creating two new DT : one to summarise the cases and one to summarise the population
       STD1Cases = STD1 %>% group_by(State) %>% summarise(STD_Cases = sum(STD_Cases))
       STD1Pop = STD1 %>% group_by(State) %>% summarise (Population = sum(Population))
+      
+      if (input$disease == "All")
+        STD1Pop = STD1 %>% filter(Disease == "Chlamydia") %>% group_by(State) %>% summarise(Population = sum(Population)) 
 
       #Setting the old work as the new base for the cases
       STD1 = STD1Cases
@@ -87,7 +90,7 @@ server <- function(input, output, session)
       STD1 = STD1[order(match(STD1$State, states$name)),]
 
       ## Preparing the legend
-      legendRow = seq(0,45,5)
+      legendRow = seq(0,54,6)
 
       bins <- legendRow
       pal <- colorBin("YlOrRd", domain = STD1$RateCalc, bins = bins)
