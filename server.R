@@ -124,7 +124,7 @@ server <- function(input, output, session)
 
     STD$Disease = as.factor(STD$Disease)
     STD$State = as.factor (STD$State)
-    STD$`Race/Ethnicity` = as.factor(STD$`Race/Ethnicity`)
+    STD$Ethnicity = as.factor(STD$Ethnicity)
     STD$Age = as.factor (STD$Age)
     STD$Age_Code = as.factor (STD$Age_Code)
     STD$Gender = as.factor(STD$Gender)
@@ -142,8 +142,8 @@ server <- function(input, output, session)
       updateSelectInput(session, "Comparison", choices = STD %>% group_by(Disease) %>% summarise() %>% unlist(use.names = FALSE))
     if(input$Factor == "Gender")
       updateSelectInput(session, "Comparison", choices = STD %>% group_by(Gender) %>% summarise() %>% unlist(use.names = FALSE))
-    if(input$Factor == "Ethnia")
-      updateSelectInput(session, "Comparison", choices = STD %>% group_by(`Race/Ethnicity`) %>% summarise() %>% unlist(use.names = FALSE))
+    if(input$Factor == "Ethnicity")
+      updateSelectInput(session, "Comparison", choices = STD %>% group_by(Ethnicity) %>% summarise() %>% unlist(use.names = FALSE))
     if(input$Factor == "Year")
       updateSelectInput(session, "Comparison", choices = 1996:2014)
     if(input$Factor == "Age")
@@ -162,7 +162,7 @@ server <- function(input, output, session)
       filter(Age_Code == input$OddsAge) %>%
       filter(Gender == input$OddsGender) %>%
       filter(State == input$OddsState) %>%
-      filter(`Race/Ethnicity` == input$OddsEthnia) %>%
+      filter(Ethnicity == input$OddsEthnicity) %>%
       filter(Year == input$OddsYear)
 
     temp2 = STD
@@ -184,10 +184,10 @@ server <- function(input, output, session)
     else
       temp2 <- temp2 %>% filter(Gender == input$OddsGender)
     
-    if(input$Factor == "Ethnia")
-      temp2 <- temp2 %>% filter(`Race/Ethnicity` == input$Comparison)
+    if(input$Factor == "Ethnicity")
+      temp2 <- temp2 %>% filter(Ethnicity == input$Comparison)
     else
-      temp2 <- temp2 %>% filter(`Race/Ethnicity`== input$OddsEthnia)
+      temp2 <- temp2 %>% filter(Ethnicity== input$OddsEthnicity)
     
     if(input$Factor == "Year")
       temp2 <- temp2 %>% filter(Year == input$Comparison)
@@ -200,7 +200,7 @@ server <- function(input, output, session)
       temp[1,1] <- input$OddsDisease
       temp[1,2] <- input$OddsState
       temp[1,3] <- input$OddsYear
-      temp[1,4] <- input$OddsEthnia
+      temp[1,4] <- input$OddsEthnicity
       temp[1,6] <- input$OddsAge
       temp[1,9] <- input$OddsGender
       temp[1,8] <- 0
@@ -235,7 +235,7 @@ server <- function(input, output, session)
             difference = tibble(Disease = "",
                                 State = setdiff(states$name,allstateRR$State),
                                 Year = 0,
-                                `Race/Ethnicity` = "",
+                                Ethnicity = "",
                                 Age ="",
                                 Age_Code = "",
                                 STD_Cases = 0,
@@ -304,7 +304,7 @@ server <- function(input, output, session)
             difference = tibble(Disease = "",
                                 State = setdiff(states$name,allstateOR$State),
                                 Year = 0,
-                                `Race/Ethnicity` = "",
+                                Ethnicity = "",
                                 Age ="",
                                 Age_Code = "",
                                 STD_Cases = 0,

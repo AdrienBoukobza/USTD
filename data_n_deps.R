@@ -13,11 +13,12 @@ library(scales)
 
 states <- us_states()
 
-STD = readRDS("data/STD.rds")
-varsDisease <- c(STD %>% group_by(Disease) %>% summarise() %>% unlist(use.names = FALSE), "All")
-varsGender <- c(STD %>% group_by(Gender) %>% summarise() %>% unlist(use.names = FALSE),"All")
-varsAge <- c(STD %>% group_by(Age_Code) %>% summarise() %>% unlist(use.names = FALSE), "All")
-varsAge <- varsAge[order(unlist(varsAge),decreasing=TRUE)]
-varsEthnia <- c(STD %>% group_by(`Race/Ethnicity`) %>% summarise() %>% unlist(use.names = FALSE), "All")
-varscomparison <- STD %>% group_by(Disease) %>% summarise() %>% unlist(use.names = FALSE)
+STD = readRDS("data/STD.rds") %>% rename(Ethnicity = `Race/Ethnicity`)
+
+STD %>%
+  select(Disease, Gender, Age, Ethnicity, State) %>%
+  map(~ unique(.) %>% sort) -> selectVars
+
+andAll <- function(x)
+  c("All", x)
 
