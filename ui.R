@@ -2,7 +2,7 @@ source("data_n_deps.R")
 
 ui <- fluidPage(theme = shinytheme("flatly"),
             navbarPage("USTD", id = "navbar",
-                       tabPanel("Home", includeMarkdown("markdown/Home.Rmd")),
+                       tabPanel("Home", includeMarkdown("markdown/Home.md")),
                        tabPanel("Interactive Map",
                                 leafletOutput("map", width = "100%", height = "700"),
                                 absolutePanel(id = "controls",
@@ -59,7 +59,7 @@ ui <- fluidPage(theme = shinytheme("flatly"),
                                                  actionButton("MapORbutton", "Rendering map with OR"))),
                                 leafletOutput("map2", width = "100%", height = "700")),
                        tabPanel("Data Explorer", DTOutput ("mapTable")),
-                       tabPanel("About", includeMarkdown("markdown/About.Rmd")),
-                       tabPanel("Licence", includeMarkdown("markdown/Licence.Rmd"))
+                       tabPanel("About", includeMarkdown("markdown/About.md")),
+                       tabPanel("Licence", includeMarkdown("markdown/Licence.md"))
             )
   )
