@@ -470,5 +470,3 @@ server <- function(input, output, session)
             updateSliderInput(session, "year", value = 2001)
           })
 }
-
-
