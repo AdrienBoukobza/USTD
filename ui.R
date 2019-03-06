@@ -59,6 +59,6 @@ ui <- fluidPage(theme = shinytheme("flatly"),
                                 leafletOutput("map2", width = "100%", height = "700")),
                        tabPanel("Data Explorer", DTOutput ("mapTable")),
                        tabPanel("About", includeMarkdown("markdown/About.md")),
-                       tabPanel("Licence", includeMarkdown("markdown/Licence.md"))
+                       tabPanel("License", includeMarkdown("markdown/License.md"))
             )
   )
