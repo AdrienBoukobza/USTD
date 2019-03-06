@@ -23,7 +23,7 @@ varscomparison <- STD %>% group_by(Disease) %>% summarise() %>% unlist(use.names
 
 ui <- fluidPage(theme = shinytheme("flatly"),
             navbarPage("USTD", id = "navbar",
-                       tabPanel("Home", includeMarkdown("markdown/Home.rmd")),
+                       tabPanel("Home", includeMarkdown("markdown/Home.Rmd")),
                        tabPanel("Interactive Map",
                                 leafletOutput("map", width = "100%", height = "700"),
                                 absolutePanel(id = "controls",
