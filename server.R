@@ -407,15 +407,8 @@ server <- function(input, output, session)
   # Create the raw data DT
   output$mapTable <- renderDT(
   {
-    #using the factor in data table
-    STD$Disease <- as.factor(STD$Disease)
-    STD$State <- as.factor (STD$State)
-    STD$Ethnicity <- as.factor(STD$Ethnicity)
-    STD$Age <- as.factor (STD$Age)
-    STD$Age_Code <- as.factor (STD$Age_Code)
-    STD$Gender <- as.factor(STD$Gender)
-    STD$Gender_Code <- as.factor(STD$Gender_Code)
-    STD
+    STD %>%
+      mutate_if(is.character, factor)
   }, 
   extensions = c("Buttons", "ColReorder", 'KeyTable'),
   filter = "top",
