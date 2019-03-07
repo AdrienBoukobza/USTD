@@ -4,11 +4,9 @@ server <- function(input, output, session)
 {
   output$map = renderLeaflet(
     {
-      m <- leaflet(states, options = leafletOptions(minZoom = 4, maxZoom = 7)) %>%
+      leaflet(states, options = leafletOptions(minZoom = 4, maxZoom = 7)) %>%
         setView(-96, 37.8, 4) %>%
-        addProviderTiles("MapBox", options = providerTileOptions(
-                                                                 id = "mapbox.light",
-                                                                 accessToken = Sys.getenv('MAPBOX_ACCESS_TOKEN'))) %>% addTiles() %>%
+        addTiles() %>%
         setMaxBounds(lng1 = -0, lat1 = 80, lng2 = -180, lat2 = 10)
     })
 
