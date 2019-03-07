@@ -10,16 +10,22 @@ server <- function(input, output, session)
       addTiles %>%
       setMaxBounds(lng1 = -0, lat1 = 80, lng2 = -180, lat2 = 10)
   })
+
+  # Reactive subpopulation object, common to map and prevalence curve
+  subpop <- reactive(
+    {
+      STD %>%
+        filter(Age == input$age | input$age == "All",
+               Gender == input$gender | input$gender == "All",
+               Disease == input$disease | input$disease == "All")
+    })
   
   # Update the map according to the UI TODO: trigger the first time
   observe(
   {
-    req(input$age, input$gender, input$disease, input$year)
+    req(subpop())
 
-    STD %>%
-      filter(Age == input$age | input$age == "All",
-             Gender == input$gender | input$gender == "All",
-             Disease == input$disease | input$disease == "All") %>%
+    subpop() %>%
       filter(Year == input$year) %>%
       group_by(State) %>%
       summarise(STD_Cases = sum(STD_Cases)) -> sampl
@@ -89,11 +95,10 @@ server <- function(input, output, session)
   # Render the prevalence curve, TODO: why not an incidence curve also ?
   output$curvetotal <- renderPlot(
   {
+    req(subpop())
+
     # Select patients from UI
-    STD %>%
-      filter(Age == input$age | input$age == "All",
-             Gender == input$gender | input$gender == "All",
-             Disease == input$disease | input$disease == "All") %>%
+    subpop() %>%
     # Summarise by year
     group_by(Year) %>%
     summarise(STD_Cases = sum(STD_Cases)) %>%
