@@ -1,12 +1,5 @@
----
-title: "About"
-author: "Adrien Boukobza"
-date: "2 mars 2019"
-output: html_document
----
+# About
 
-## About
+We are two medical students in the French University Paris Descartes.
 
-Us : We are two students in the French University Paris Descartes.  
-This project is a part of the evaluation of our first year of master about biomedical computer science.  
-All our data come from the US CDC site, using the WONDER tool.")
+This project has been developed as part of the evaluation of our first year of master in  biomedical informatics.

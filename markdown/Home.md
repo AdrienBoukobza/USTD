@@ -1,25 +1,13 @@
----
-title: "Home"
-author: "Adrien Boukobza"
-date: "2 mars 2019"
-output: html_document
----
+# Home
 
-## Home
+The recent surge of STD in the USA is a very hot topic and could represent a major public health issue within a short timespan. It prompted us to provide means to explore the data about this subject.
 
-The recent raise of STD in the USA is a very hot topic because it could represent a major public health issue within few years. That's why we decided to examine the data about this subject.
+The first tool we provide is an **explorable map** of the diseases burden over the USA.  
+Each state is shaded according to the density of the disease of interest in the selected population.
 
-First, to have a global overview of the importance of STD in the USA we chose to make a map showing the density of STD in each state on 1000 inhabitants.
+The second tool is a **simple forecast** of the number of cases for any combination of disease and state.  
+The forecast is provided using the `prophet` package from facebook research (https://facebook.github.io/prophet/)
 
-The second point, is a simple computed prevision to see how the number of cases should 
-evolve in few years in each state and for each disease
+The third tool is a **risk comparator** to calculate the risk ratios between a reference population and ones differing on one parameter. The risks are also displayed on a map, between the reference population and the same population in all other states.
 
-**CAUTION**: These results are only mathematical previsions of the cases, and don't have a real predictive value.
-
-The third point allows the user to compare the chances to have a specific disease for a specific population in each state, comparing with another one with a different parameter.
-
-*Risk ratio* is the probability of the outcome of an event in an exposed group compared to a non exposed one.
-
-*Odds Ratio* is quite based on the Risk ratio but also uses the inverse probability of an event to calculate a value.
-
-Finally, the user can consult the data and copy it for his own study.
+The **raw data** used in this application is also provided.
