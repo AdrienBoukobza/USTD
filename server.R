@@ -2,6 +2,7 @@ source("data_n_deps.R")
 
 server <- function(input, output, session)
 {
+  # Create the first map leaftlet object
   output$map <- renderLeaflet(
   {
     leaflet(states, options = leafletOptions(minZoom = 4, maxZoom = 7)) %>%
@@ -9,7 +10,8 @@ server <- function(input, output, session)
       addTiles %>%
       setMaxBounds(lng1 = -0, lat1 = 80, lng2 = -180, lat2 = 10)
   })
-
+  
+  # Update the map according to the UI
   observe(
   {
     #Creating a copy to work on
@@ -42,7 +44,7 @@ server <- function(input, output, session)
     rm(STD1Cases)
 
     #Creating the rates in the working table
-    STD1 <- STD1 %>% mutate (RateCalc = STD1$STD_Cases * 1000 / STD1Pop$Population)
+    STD1 <- STD1 %>% mutate(RateCalc = STD1$STD_Cases * 1000 / STD1Pop$Population)
 
     #Completing the table with the populations
     STD1 <- STD1 %>% mutate(Population = STD1Pop$Population)
@@ -114,47 +116,40 @@ server <- function(input, output, session)
               position = "bottomleft")
   })
 
-  output$mapTable <- renderDT(
+  # Render the prevalence curve, TODO: why not an incidence curve also ?
+  output$curvetotal <- renderPlot(
   {
-    #using the factor in data table
-    STD$Disease <- as.factor(STD$Disease)
-    STD$State <- as.factor (STD$State)
-    STD$Ethnicity <- as.factor(STD$Ethnicity)
-    STD$Age <- as.factor (STD$Age)
-    STD$Age_Code <- as.factor (STD$Age_Code)
-    STD$Gender <- as.factor(STD$Gender)
-    STD$Gender_Code <- as.factor(STD$Gender_Code)
-    STD
-  }, 
-  extensions = c("Buttons", "ColReorder", 'KeyTable'),
-  filter = "top",
-  options = list(keys = TRUE,
-                 colReorder = TRUE,
-                 pageLength = 12,
-                 dom = "Bfrtip",
-                 buttons = c("copy", "csv", "pdf", I('colvis')),
-                 autoWidth = TRUE,
-                 columnDefs = list(list(width = '200px', targets = "_all"))))
+    plot2 <- STD %>% group_by(Year) %>% summarise(sum(STD_Cases))
+    colnames(plot2) <- c("Year", "STD_Cases")
 
-  observe(
-  {
-    if (input$Factor == "Disease")
-      updateSelectInput(session, "Comparison", choices = STD %>% group_by(Disease) %>% summarise() %>% unlist(use.names = FALSE))
+    plot3 <- STD
 
-    if (input$Factor == "Gender")
-      updateSelectInput(session, "Comparison", choices = STD %>% group_by(Gender) %>% summarise() %>% unlist(use.names = FALSE))
+    if (input$age != "All")
+      plot3 <- plot3 %>% filter(Age == input$age)
 
-    if (input$Factor == "Ethnicity")
-      updateSelectInput(session, "Comparison", choices = STD %>% group_by(Ethnicity) %>% summarise() %>% unlist(use.names = FALSE))
+    if (input$gender != "All")
+      plot3 <- plot3 %>% filter(Gender == input$gender)
 
-    if (input$Factor == "Year")
-      updateSelectInput(session, "Comparison", choices = 1996:2014)
+    if (input$disease != "All")
+      plot3 <- plot3 %>% filter(Disease == input$disease)
 
-    if (input$Factor == "Age")
-      updateSelectInput(session, "Comparison", choices = STD %>% group_by(Age) %>% summarise() %>% unlist(use.names = FALSE))
+    plot3 <- plot3 %>% group_by(Year) %>% summarise(sum(STD_Cases))
+    colnames(plot3) <- c("Year", "STD_Cases2")
+
+    plot2 <- left_join(plot2, plot3)
+
+    ggplot(plot2) +
+      geom_line(mapping = aes(x = Year, y = log(STD_Cases), color = "All cases"), size = 1) +
+      geom_line(mapping = aes(x = Year, y = log(STD_Cases2), color = "Filtered cases"), size = 1) +
+      xlab ("Year") +
+      ylab ("Log of number of cases") +
+      labs(title = "Evolution of total number of cases and filtered") +
+      theme(legend.position = "right") +
+      guides(color=guide_legend("Number of cases"))
   })
 
-  contingenceTB <- reactive(
+  # Create the risk table
+  output$contingence <- renderDT(
   {
     #Building the contingence Table
     #Defining the first condition
@@ -170,30 +165,30 @@ server <- function(input, output, session)
 
     #Defining the second condition
 
-    if (input$Factor == "Disease")
-      temp2 <- temp2 %>% filter(Disease == input$Comparison)
-    else
-      temp2 <- temp2 %>% filter(Disease == input$OddsDisease)
+    # if (input$Factor == "Disease")
+    #   temp2 <- temp2 %>% filter(Disease == input$Comparison)
+    # else
+    #   temp2 <- temp2 %>% filter(Disease == input$OddsDisease)
 
-    if (input$Factor == "Age")
-      temp2 <- temp2 %>% filter(Age == input$Comparison)
-    else
-      temp2 <- temp2 %>% filter(Age == input$OddsAge)
+    # if (input$Factor == "Age")
+    #   temp2 <- temp2 %>% filter(Age == input$Comparison)
+    # else
+    #   temp2 <- temp2 %>% filter(Age == input$OddsAge)
 
-    if (input$Factor == "Gender")
-      temp2 <- temp2 %>% filter(Gender == input$Comparison)
-    else
-      temp2 <- temp2 %>% filter(Gender == input$OddsGender)
+    # if (input$Factor == "Gender")
+    #   temp2 <- temp2 %>% filter(Gender == input$Comparison)
+    # else
+    #   temp2 <- temp2 %>% filter(Gender == input$OddsGender)
 
-    if (input$Factor == "Ethnicity")
-      temp2 <- temp2 %>% filter(Ethnicity == input$Comparison)
-    else
-      temp2 <- temp2 %>% filter(Ethnicity== input$OddsEthnicity)
+    # if (input$Factor == "Ethnicity")
+    #   temp2 <- temp2 %>% filter(Ethnicity == input$Comparison)
+    # else
+    #   temp2 <- temp2 %>% filter(Ethnicity== input$OddsEthnicity)
 
-    if (input$Factor == "Year")
-      temp2 <- temp2 %>% filter(Year == input$Comparison)
-    else
-      temp2 <- temp2 %>% filter(Year == input$OddsYear)
+    # if (input$Factor == "Year")
+    #   temp2 <- temp2 %>% filter(Year == input$Comparison)
+    # else
+    #   temp2 <- temp2 %>% filter(Year == input$OddsYear)
 
     if (is.na(as.numeric(temp[1, 7])))
     {
@@ -222,13 +217,23 @@ server <- function(input, output, session)
     temp <- temp %>% mutate(STDonNon = STD_Cases / nonDiseased)
     temp <- temp %>% mutate (ReferenceSTDonNon = as.numeric(STDCondition / NonDiseased))
     temp <- temp %>% mutate(OR = as.numeric (ReferenceSTDonNon / STDonNon))
+
+    temp
   })
 
-  output$contingence <- renderDT(
+  # Create the risk map object
+  output$map2 <- renderLeaflet(
   {
-    contingenceTB()
+    leaflet(states, options = leafletOptions(minZoom = 4, maxZoom = 7)) %>%
+      setView(-96, 37.8, 4) %>%
+      addTiles %>%
+      setMaxBounds(lng1 = -0,
+                   lat1 = 80,
+                   lng2 = -180,
+                   lat2 = 10)
   })
 
+  # Update risk map for RR
   observeEvent(input$MapRRbutton,
   {
     allstateRR <- contingenceTB ()
@@ -293,6 +298,7 @@ server <- function(input, output, session)
               position = "bottomright")
   })
 
+  # Update risk map for OR
   observeEvent(input$MapORbutton,
   {
     allstateOR <- contingenceTB()
@@ -357,17 +363,7 @@ server <- function(input, output, session)
               position = "bottomright")
   })
 
-  output$map2 <- renderLeaflet(
-  {
-    leaflet(states, options = leafletOptions(minZoom = 4, maxZoom = 7)) %>%
-      setView(-96, 37.8, 4) %>%
-      addTiles %>%
-      setMaxBounds(lng1 = -0,
-                   lat1 = 80,
-                   lng2 = -180,
-                   lat2 = 10)
-  })
-
+  # Render the forecast curve
   output$curve <- renderPlotly(
   {
     plot <- STD
@@ -408,37 +404,30 @@ server <- function(input, output, session)
         labs(title = "Prevision of evolution of number of cases")
   })
 
-  output$curvetotal <- renderPlot(
+  # Create the raw data DT
+  output$mapTable <- renderDT(
   {
-    plot2 <- STD %>% group_by(Year) %>% summarise(sum(STD_Cases))
-    colnames(plot2) <- c("Year", "STD_Cases")
+    #using the factor in data table
+    STD$Disease <- as.factor(STD$Disease)
+    STD$State <- as.factor (STD$State)
+    STD$Ethnicity <- as.factor(STD$Ethnicity)
+    STD$Age <- as.factor (STD$Age)
+    STD$Age_Code <- as.factor (STD$Age_Code)
+    STD$Gender <- as.factor(STD$Gender)
+    STD$Gender_Code <- as.factor(STD$Gender_Code)
+    STD
+  }, 
+  extensions = c("Buttons", "ColReorder", 'KeyTable'),
+  filter = "top",
+  options = list(keys = TRUE,
+                 colReorder = TRUE,
+                 pageLength = 12,
+                 dom = "Bfrtip",
+                 buttons = c("copy", "csv", "pdf", I('colvis')),
+                 autoWidth = TRUE,
+                 columnDefs = list(list(width = '200px', targets = "_all"))))
 
-    plot3 <- STD
-
-    if (input$age != "All")
-      plot3 <- plot3 %>% filter(Age == input$age)
-
-    if (input$gender != "All")
-      plot3 <- plot3 %>% filter(Gender == input$gender)
-
-    if (input$disease != "All")
-      plot3 <- plot3 %>% filter(Disease == input$disease)
-
-    plot3 <- plot3 %>% group_by(Year) %>% summarise(sum(STD_Cases))
-    colnames(plot3) <- c("Year", "STD_Cases2")
-
-    plot2 <- left_join(plot2, plot3)
-
-    ggplot(plot2) +
-      geom_line(mapping = aes(x = Year, y = log(STD_Cases), color = "All cases"), size = 1) +
-      geom_line(mapping = aes(x = Year, y = log(STD_Cases2), color = "Filtered cases"), size = 1) +
-      xlab ("Year") +
-      ylab ("Log of number of cases") +
-      labs(title = "Evolution of total number of cases and filtered") +
-      theme(legend.position = "right") +
-      guides(color=guide_legend("Number of cases"))
-  })
-
+  # Create the presets
   observeEvent(input$preset1,
   {
     updateSelectInput(session, "disease", selected = "Chlamydia")
