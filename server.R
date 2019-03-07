@@ -60,12 +60,12 @@ server <- function(input, output, session)
 
     meancountry <- rep(meancountry, 51)
 
-    #TODO: no scientific notation
+    #TODO: prevent scientific notation
     labels <- sprintf("<strong>%s</strong><br/>%g cases in the state <br/>%g cases / 1000 hab<br/>Population: %g<br/>Country mean: %g",
                       tabl$State, tabl$STD_Cases, tabl$Rate, tabl$Population, meancountry) %>%
       lapply(htmltools::HTML)
 
-    ## Legend palette TODO: generate a legend palette at the same time as the population is selected
+    ## Legend palette TODO: generate a legend palette at the same time as the population is selected (use a reactive dependant on subpop()) : same colors for the same population at any date, but different scales based on selected population
     pal <- colorBin("YlOrRd", domain = tabl$Rate, bins = seq(0, 70, 10))
 
     leafletProxy("map") %>%
@@ -93,7 +93,7 @@ server <- function(input, output, session)
               position = "bottomleft")
   })
 
-  # Render the prevalence curve, TODO: why not an incidence curve also ?
+  # Render the prevalence curve, TODO: why not an incidence curve also ? (later)
   output$curvetotal <- renderPlot(
   {
     req(subpop())
@@ -122,7 +122,7 @@ server <- function(input, output, session)
       guides(color=guide_legend(""))
   })
 
-  # Create the risk table TODO: fix
+  # Create the risk table TODO: fix (celui-là je m'en occuperai)
   output$contingence <- renderDT(
   {
     #Building the contingence Table
@@ -272,7 +272,7 @@ server <- function(input, output, session)
               position = "bottomright")
   })
 
-  # Update risk map for OR
+  # Update risk map for OR TODO: delete
   observeEvent(input$MapORbutton,
   {
     allstateOR <- contingenceTB()
