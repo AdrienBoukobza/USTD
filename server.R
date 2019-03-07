@@ -60,12 +60,13 @@ server <- function(input, output, session)
 
     meancountry <- rep(meancountry, 51)
 
+    #TODO: no scientific notation
     labels <- sprintf("<strong>%s</strong><br/>%g cases in the state <br/>%g cases / 1000 hab<br/>Population: %g<br/>Country mean: %g",
                       tabl$State, tabl$STD_Cases, tabl$Rate, tabl$Population, meancountry) %>%
       lapply(htmltools::HTML)
 
-    ## Legend palette
-    pal <- colorBin("YlOrRd", domain = tabl$Rate, bins = seq(0, 60, 10))
+    ## Legend palette TODO: generate a legend palette at the same time as the population is selected
+    pal <- colorBin("YlOrRd", domain = tabl$Rate, bins = seq(0, 70, 10))
 
     leafletProxy("map") %>%
       addPolygons(data = states,
