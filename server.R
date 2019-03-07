@@ -20,12 +20,12 @@ server <- function(input, output, session)
                Disease == input$disease | input$disease == "All")
     })
 
-  # Update the map according to the UI TODO: trigger the first time
+  # Update the map according to the UI
   observe(
   {
     req(subpop())
-
-    subpop() %>%
+    if(input$navbar == "Interactive Map" | input$navbar != "Interactive Map")
+      subpop() %>%
       filter(Year == input$year) %>%
       group_by(State) %>%
       summarise(STD_Cases = sum(STD_Cases)) -> sampl
@@ -40,33 +40,39 @@ server <- function(input, output, session)
     popl %>%
       left_join(sampl) %>%
       mutate(Rate = 1000 * STD_Cases / Population) -> tabl
+    
+    #Prevent to skip some states
+    difference = tibble(setdiff(states$name, tabl$State),
+                        Population = 0,
+                        STD_Cases = 0,
+                        Rate = 0)
+    colnames(difference) = c("State", "Population", "STD_Cases", "Rate")
+    
+    tabl = rbind(tabl, difference)
+    tabl = tabl[order(match(tabl$State, states$name)),]
 
-    #Preparing the labels TODO: refactor
-    if (input$disease != "All")
-      meancountrypop <- STD %>% filter(Disease == input$disease)
+    #Preparing the labels
+    
+    STD %>% filter(Disease == input$disease | input$disease == "All",
+                   Year    == input$year) %>% 
+    group_by(Disease)-> meancountry
 
-    meancountrypop <- STD %>% filter(Year == input$year) %>% group_by(Disease) %>% summarise(sum(Population))
+    meancountrypop <- meancountry %>% summarise(Population = sum(Population))
+    meancountrypop <- as.numeric (meancountrypop[1,2])
 
-    meancountrypop <- as.numeric(meancountrypop[1, 2])
-
-    if (input$disease != "All")
-      meancountrycases <- STD %>% filter(Disease == input$disease)
-
-    meancountrycases <- STD %>% filter(Year == input$year) %>% group_by(Disease) %>% summarise(sum(STD_Cases))
-
-    meancountrycases <- as.numeric(meancountrycases[1, 2])
+    meancountrycases <- meancountry %>% summarise(STD_Cases = sum(STD_Cases))
+    meancountrycases <- as.numeric(meancountrycases[1,2])
 
     meancountry <- (meancountrycases * 1000 ) / meancountrypop
 
-    meancountry <- rep(meancountry, 51)
-
-    #TODO: prevent scientific notation
-    labels <- sprintf("<strong>%s</strong><br/>%g cases in the state <br/>%g cases / 1000 hab<br/>Population: %g<br/>Country mean: %g",
+    meancountry <- rep(meancountry, 52)
+    
+    labels <- sprintf("<strong>%s</strong><br/>%g cases in the state <br/>%g cases / 1000 hab<br/>Population: %.10g<br/>Country mean: %g",
                       tabl$State, tabl$STD_Cases, tabl$Rate, tabl$Population, meancountry) %>%
       lapply(htmltools::HTML)
-
-    ## Legend palette TODO: generate a legend palette at the same time as the population is selected (use a reactive dependant on subpop()) : same colors for the same population at any date, but different scales based on selected population
-    pal <- colorBin("YlOrRd", domain = tabl$Rate, bins = seq(0, 70, 10))
+    
+    ## Legend palette
+    pal <- colorBin("YlOrRd", domain = tabl$Rate, bins = seq(0, max(tabl$Rate,na.rm=T), max(tabl$Rate, na.rm = T)/9))
 
     leafletProxy("map") %>%
       addPolygons(data        = states,
@@ -93,7 +99,7 @@ server <- function(input, output, session)
               position = "bottomleft")
   })
 
-  # Render the prevalence curve, TODO: why not an incidence curve also ? (later)
+  # Render the prevalence curve
   output$curvetotal <- renderPlot(
   {
     req(subpop())
@@ -121,7 +127,52 @@ server <- function(input, output, session)
       theme(legend.position = "right") +
       guides(color=guide_legend(""))
   })
+  
+  output$curveincidence <- renderPlot(
+    {
+      STD %>%
+        group_by(Year) %>%
+        summarise(STD_Cases = sum(STD_Cases, na.rm = TRUE)) %>%
+        mutate(group = "All cases",
+               prevSTD = c(0,STD_Cases[1:18]),
+               incidence = STD_Cases - prevSTD) %>% 
 
+        # Plot
+        ggplot() +
+        aes(x = Year, y = incidence, color = group) +
+        geom_line() +
+        scale_y_log10() +
+        xlab ("Year") +
+        ylab ("Incidence of cases") +
+        labs(title = "Evolution of incidence of cases and filtered") +
+        theme(legend.position = "right") +
+        guides(color=guide_legend(""))
+    })
+  
+  output$curveincidence2 <- renderPlot(
+    {
+      req(subpop())
+      
+      # Select patients from UI
+      subpop() %>%
+        # Summarise by year
+        group_by(Year) %>%
+        summarise(STD_Cases = sum(STD_Cases, na.rm = TRUE)) %>%
+        mutate(group = "Filtered cases",
+               prevSTD = c(0,STD_Cases[1:18]),
+               incidence = STD_Cases - prevSTD) %>% 
+        
+        # Plot
+        ggplot() +
+        aes(x = Year, y = incidence, color = group) +
+        geom_line() +
+        xlab ("Year") +
+        ylab ("Incidence of cases") +
+        labs(title = "Evolution of incidence of filtered cases") +
+        theme(legend.position = "right") +
+        scale_color_manual(values=c("#9999CC"))+
+        guides(color=guide_legend(""))
+    })
   # Create the risk table TODO: fix (celui-là je m'en occuperai)
   output$contingence <- renderDT(
   {
@@ -269,71 +320,6 @@ server <- function(input, output, session)
               values   = allstateRR$RR[2:53],
               opacity  = 0.85,
               title    = "Risk Ratio",
-              position = "bottomright")
-  })
-
-  # Update risk map for OR TODO: delete
-  observeEvent(input$MapORbutton,
-  {
-    allstateOR <- contingenceTB()
-    difference <- tibble(Disease           = "",
-                         State             = setdiff(states$name, allstateOR$State),
-                         Year              = 0,
-                         Ethnicity         = "",
-                         Age               ="",
-                         Age_Code          = "",
-                         STD_Cases         = 0,
-                         Population        = 0,
-                         Gender            = "",
-                         Gender_Code       = "",
-                         nonDiseased       = "",
-                         STDonPopulation   = "",
-                         ReferenceSTDonPop = "",
-                         RR                = 0,
-                         STDonNon          = "",
-                         ReferenceSTDonNon = "",
-                         OR                = 0)
-
-    #Fusionning the two data and ordering to use with the map
-    allstateOR <- rbind(allstateOR, difference)
-    allstateOR <- allstateOR[order(match(allstateOR$State, states$name)),]
-
-    total <- STD %>% group_by(State) %>% summarise (sum(Population))
-    difference <- tibble(State = setdiff(states$name,total$State), `sum(Population)` = 0)
-    total <- rbind(total, difference)
-
-    ## Preparing the legend
-    legendRow <- seq(0, 54, 6)
-
-    bins <- legendRow
-    pal <- colorBin("Oranges", domain = allstateOR$OR[2:53], bins = bins)
-
-    labels <- sprintf("<strong>%s</strong><br/>Multiplicator chances: %g ",
-                      states$name, allstateOR$OR[2:53]) %>%
-      lapply(htmltools::HTML)
-
-    leafletProxy("map2") %>%
-      addPolygons(data        = states,
-                  fillColor   = ~pal(allstateOR$OR[2:53]),
-                  weight      = 1,
-                  opacity     = 0.7,
-                  color       = "grey",
-                  dashArray   = "3",
-                  fillOpacity = 0.7,
-                  highlight = highlightOptions(weight       = 5,
-                                               color        = "#666",
-                                               dashArray    = "",
-                                               fillOpacity  = 0.85,
-                                               bringToFront = TRUE),
-                  label = labels,
-                  labelOptions = labelOptions(style     = list("font-weight" = "normal", padding = "3px 8px"),
-                                              textsize  = "15px",
-                                              direction = "auto")) %>%
-    clearControls() %>%
-    addLegend(pal      = pal,
-              values   = allstateOR$OR[2:53],
-              opacity  = 0.85,
-              title    = "Odds Ratio",
               position = "bottomright")
   })
 

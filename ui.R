@@ -27,7 +27,9 @@ STDMap <- tabPanel("Interactive Map",
                                  actionButton("preset1", "Chlamydia in young adult female"),
                                  actionButton("preset2", "Minimum of Gonorrhea"),
                                  actionButton("preset3", "Minimum of Syphilis")),
-                   fluidRow(column(12, plotOutput("curvetotal"))))
+                   fluidRow(column(12, plotOutput("curvetotal"))),
+                   fluidRow(column(6, plotOutput("curveincidence")),
+                            column(6, plotOutput("curveincidence2"))))
 
 CurveExplorer <- tabPanel("Curve Explorer",
                           selectInput("statecurve", "State", selectVars$State %>% andAll),
@@ -49,12 +51,9 @@ RiskCalculator <- tabPanel("Risk calculator",
                                            h3("Compare by"),
                                            selectInput("Factor","Factor",c("Disease", "Gender", "Ethnicity", "Age", "Year")))),
                            DTOutput("contingence"),
-                           fluidRow(column(5,
-                                           offset =1,
-                                           actionButton("MapRRbutton", "Rendering map with RR")),
-                                    column(5,
-                                           offset =1,
-                                           actionButton("MapORbutton", "Rendering map with OR"))),
+                           fluidRow(column(1,
+                                           offset =5,
+                                           actionButton("MapRRbutton", "Rendering map with RR"))),
                            leafletOutput("map2", width = "100%", height = "700"))
 
 DataExplorer <- tabPanel("Data Explorer", DTOutput("mapTable"))
