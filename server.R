@@ -1,5 +1,14 @@
 source("data_n_deps.R")
 
+options(scipen = 999)
+
+states %>%
+  arrange(name) -> states
+
+STD %>%
+  select(State, Year, Ethnicity, Age, Gender, Population) %>%
+  distinct -> populations
+
 server <- function(input, output, session)
 {
   # Create the first map leaftlet object
@@ -11,64 +20,31 @@ server <- function(input, output, session)
       setMaxBounds(lng1 = -0, lat1 = 80, lng2 = -180, lat2 = 10)
   })
   
-  # Update the map according to the UI
+  # Update the map according to the UI TODO: trigger the first time
   observe(
   {
-    #Creating a copy to work on
-    if (input$navbar == "Interactive Map")
-      STD1 <- STD
-    else
-      STD1 <- STD
+    req(input$age, input$gender, input$disease, input$year)
 
-    #Filtering data, preventing the analyzer to filter the "All" Option.
-    if (input$disease != "All")
-      STD1 <- STD1 %>% filter(Disease == input$disease)
+    STD %>%
+      filter(Age == input$age | input$age == "All",
+             Gender == input$gender | input$gender == "All",
+             Disease == input$disease | input$disease == "All") %>%
+      filter(Year == input$year) %>%
+      group_by(State) %>%
+      summarise(STD_Cases = sum(STD_Cases)) -> sampl
 
-    if (input$gender != "All")
-      STD1 <- STD1 %>% filter(Gender == input$gender)
+    populations %>%
+      filter(Age == input$age | input$age == "All",
+             Gender == input$gender | input$gender == "All",
+             Year == input$year) %>%
+    group_by(State) %>%
+    summarise(Population = sum(Population)) -> popl
 
-    if (input$age != "All")
-      STD1 <- STD1 %>% filter(Age == input$age)
+    popl %>%
+      left_join(sampl) %>%
+      mutate(Rate = 1000 * STD_Cases / Population) -> tabl
 
-    STD1 <- STD1 %>% filter(Year == input$year)
-
-    # Creating two new DT : one to summarise the cases and one to summarise the population
-    STD1Cases <- STD1 %>% group_by(State) %>% summarise(STD_Cases = sum(STD_Cases))
-    STD1Pop <- STD1 %>% group_by(State) %>% summarise (Population = sum(Population))
-
-    if (input$disease == "All")
-      STD1Pop <- STD1 %>% filter(Disease == "Chlamydia") %>% group_by(State) %>% summarise(Population = sum(Population)) 
-
-    #Setting the old work as the new base for the cases
-    STD1 <- STD1Cases
-    rm(STD1Cases)
-
-    #Creating the rates in the working table
-    STD1 <- STD1 %>% mutate(RateCalc = STD1$STD_Cases * 1000 / STD1Pop$Population)
-
-    #Completing the table with the populations
-    STD1 <- STD1 %>% mutate(Population = STD1Pop$Population)
-
-    #Establishing which are the missing states
-    difference <- tibble(setdiff(states$name, STD1$State),
-                         STD_Cases = 0,
-                         RateCalc = 0,
-                         Population = 0)
-
-    colnames(difference) <- c("State", "STD_Cases", "RateCalc", "Population")
-
-    #Fusionning the two data and ordering to use with the map
-    STD1 <- rbind(STD1, difference)
-    STD1 <- STD1[order(match(STD1$State, states$name)),]
-
-    ## Preparing the legend
-    legendRow <- seq(0, 54, 6)
-
-    bins <- legendRow
-    pal <- colorBin("YlOrRd", domain = STD1$RateCalc, bins = bins)
-
-    #Preparing the labels
-
+    #Preparing the labels TODO:
     if (input$disease != "All")
       meancountrypop <- STD %>% filter(Disease == input$disease)
 
@@ -85,15 +61,18 @@ server <- function(input, output, session)
 
     meancountry <- (meancountrycases * 1000 ) / meancountrypop
 
-    meancountry <- rep(meancountry, 52)
+    meancountry <- rep(meancountry, 51)
 
-    labels <- sprintf("<strong>%s</strong><br/>%g cases in the state <br/>Average: %g <br/> Population: %g <br/> Remind, country mean: %g",
-                      states$name, STD1$STD_Cases, STD1$RateCalc,STD1$Population, meancountry) %>%
+    labels <- sprintf("<strong>%s</strong><br/>%g cases in the state <br/>%g cases / 1000 hab<br/>Population: %g<br/>Country mean: %g",
+                      tabl$State, tabl$STD_Cases, tabl$Rate, tabl$Population, meancountry) %>%
       lapply(htmltools::HTML)
+
+    ## Legend palette
+    pal <- colorBin("YlOrRd", domain = tabl$Rate, bins = seq(0, 60, 10))
 
     leafletProxy("map") %>%
       addPolygons(data = states,
-                  fillColor = ~pal(STD1$RateCalc),
+                  fillColor = ~ pal(tabl$Rate),
                   weight = 1,
                   opacity = 0.7,
                   color = "grey",
@@ -110,9 +89,9 @@ server <- function(input, output, session)
                                               direction = "auto")) %>%
     clearControls() %>%
     addLegend(pal = pal,
-              values = STD1$RateCalc,
+              values = tabl$Rate,
               opacity = 0.85,
-              title = "for 1 000 inhabitants of a class of age",
+              title = "for 1 000 inhabitants of the selected subpopulation",
               position = "bottomleft")
   })
 
