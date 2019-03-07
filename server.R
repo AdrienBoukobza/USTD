@@ -119,33 +119,31 @@ server <- function(input, output, session)
   # Render the prevalence curve, TODO: why not an incidence curve also ?
   output$curvetotal <- renderPlot(
   {
-    plot2 <- STD %>% group_by(Year) %>% summarise(sum(STD_Cases))
-    colnames(plot2) <- c("Year", "STD_Cases")
+    # Select patients from UI
+    STD %>%
+      filter(Age == input$age | input$age == "All",
+             Gender == input$gender | input$gender == "All",
+             Disease == input$disease | input$disease == "All") %>%
+    # Summarise by year
+    group_by(Year) %>%
+    summarise(STD_Cases = sum(STD_Cases)) %>%
+    mutate(group = "Filtered cases") %>%
+    # Add total population
+    bind_rows(STD %>%
+              group_by(Year) %>%
+              summarise(STD_Cases = sum(STD_Cases)) %>%
+              mutate(group = "All cases")) %>%
 
-    plot3 <- STD
-
-    if (input$age != "All")
-      plot3 <- plot3 %>% filter(Age == input$age)
-
-    if (input$gender != "All")
-      plot3 <- plot3 %>% filter(Gender == input$gender)
-
-    if (input$disease != "All")
-      plot3 <- plot3 %>% filter(Disease == input$disease)
-
-    plot3 <- plot3 %>% group_by(Year) %>% summarise(sum(STD_Cases))
-    colnames(plot3) <- c("Year", "STD_Cases2")
-
-    plot2 <- left_join(plot2, plot3)
-
-    ggplot(plot2) +
-      geom_line(mapping = aes(x = Year, y = log(STD_Cases), color = "All cases"), size = 1) +
-      geom_line(mapping = aes(x = Year, y = log(STD_Cases2), color = "Filtered cases"), size = 1) +
+    # Plot
+    ggplot() +
+      aes(x = Year, y = STD_Cases, color = group) +
+      geom_line() +
+      scale_y_log10() +
       xlab ("Year") +
-      ylab ("Log of number of cases") +
+      ylab ("Number of cases") +
       labs(title = "Evolution of total number of cases and filtered") +
       theme(legend.position = "right") +
-      guides(color=guide_legend("Number of cases"))
+      guides(color=guide_legend(""))
   })
 
   # Create the risk table
