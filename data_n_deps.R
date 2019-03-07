@@ -10,6 +10,7 @@ library(plotly)
 library(prophet)
 library(shinycustomloader)
 library(scales)
+library(dygraphs)
 
 # Load states boundaries
 states <- us_states()

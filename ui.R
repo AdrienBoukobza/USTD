@@ -32,7 +32,7 @@ STDMap <- tabPanel("Interactive Map",
 CurveExplorer <- tabPanel("Curve Explorer",
                           selectInput("statecurve", "State", selectVars$State %>% andAll),
                           selectInput("diseasecurve", "Disease", selectVars$Disease %>% andAll),
-                          withLoader(plotOutput("curve",width = "70%", height = "600px"), type = 'html', loader = "dnaspin"))
+                          withLoader(dygraphOutput("curve",width = "70%", height = "600px"), type = 'html', loader = "dnaspin"))
 
 RiskCalculator <- tabPanel("Risk calculator",
                            fluidRow(h2("Comparative beetween the different States", align = "center"),

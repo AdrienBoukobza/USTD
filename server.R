@@ -364,7 +364,7 @@ server <- function(input, output, session)
   })
 
   # Render the forecast curve
-  output$curve <- renderPlot(
+  output$curve <- renderDygraph(
   {
     # Create training object
     STD %>%
@@ -391,7 +391,7 @@ server <- function(input, output, session)
     model %>%
       predict(make_future_dataframe(., periods = 10, freq = "year")) %>%
       # Plot the result
-      plot(model, .)
+      dyplot.prophet(model, .)
   })
 
   # Create the raw data DT
