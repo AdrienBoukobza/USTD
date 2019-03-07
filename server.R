@@ -1,14 +1,5 @@
 source("data_n_deps.R")
 
-options(scipen = 999)
-
-states %>%
-  arrange(name) -> states
-
-STD %>%
-  select(State, Year, Ethnicity, Age, Gender, Population) %>%
-  distinct -> populations
-
 server <- function(input, output, session)
 {
   # Create the first map leaftlet object
@@ -44,7 +35,7 @@ server <- function(input, output, session)
       left_join(sampl) %>%
       mutate(Rate = 1000 * STD_Cases / Population) -> tabl
 
-    #Preparing the labels TODO:
+    #Preparing the labels TODO: refactor
     if (input$disease != "All")
       meancountrypop <- STD %>% filter(Disease == input$disease)
 

@@ -12,11 +12,19 @@ library(shinycustomloader)
 library(scales)
 library(dygraphs)
 
-# Load states boundaries
-states <- us_states()
+options(scipen = 999)
+
+# Load states boundaries and reorder alphabetically
+us_states() %>%
+  arrange(name) -> states
 
 # Load CDC data
 STD = readRDS("data/STD.rds") %>% rename(Ethnicity = `Race/Ethnicity`)
+
+# Extract the population data only
+STD %>%
+  select(State, Year, Ethnicity, Age, Gender, Population) %>%
+  distinct -> populations
 
 # Create indexes for the selectors
 STD %>%
@@ -26,4 +34,7 @@ STD %>%
 # Function to add "All" to a vector
 andAll <- function(x)
   c("All", x)
+
+
+
 
