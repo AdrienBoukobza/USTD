@@ -31,7 +31,7 @@ server <- function(input, output, session)
 
       if(input$age != "All")
       {
-        STD1 = STD1 %>% filter(Age_Code == input$age)
+        STD1 = STD1 %>% filter(Age == input$age)
       }
 
       STD1 = STD1 %>% filter (Year == input$year)
@@ -145,7 +145,7 @@ server <- function(input, output, session)
     if(input$Factor == "Year")
       updateSelectInput(session, "Comparison", choices = 1996:2014)
     if(input$Factor == "Age")
-      updateSelectInput(session, "Comparison", choices = STD %>% group_by(Age_Code) %>% summarise() %>% unlist(use.names = FALSE))
+      updateSelectInput(session, "Comparison", choices = STD %>% group_by(Age) %>% summarise() %>% unlist(use.names = FALSE))
   })
 
   contingenceTB = reactive ({
@@ -157,7 +157,7 @@ server <- function(input, output, session)
 
     temp = STD %>%
       filter(Disease == input$OddsDisease) %>%
-      filter(Age_Code == input$OddsAge) %>%
+      filter(Age == input$OddsAge) %>%
       filter(Gender == input$OddsGender) %>%
       filter(State == input$OddsState) %>%
       filter(Ethnicity == input$OddsEthnicity) %>%
@@ -173,9 +173,9 @@ server <- function(input, output, session)
       temp2 <- temp2 %>% filter(Disease == input$OddsDisease)
     
     if(input$Factor == "Age")
-      temp2 <- temp2 %>% filter(Age_Code == input$Comparison)
+      temp2 <- temp2 %>% filter(Age == input$Comparison)
     else
-      temp2 <- temp2 %>% filter(Age_Code ==input$OddsAge)
+      temp2 <- temp2 %>% filter(Age ==input$OddsAge)
     
     if(input$Factor == "Gender")
       temp2 <- temp2 %>% filter(Gender == input$Comparison)
@@ -423,7 +423,7 @@ server <- function(input, output, session)
 
     plot3 = STD
 
-    if(input$age != "All") {plot3 = plot3 %>% filter(Age_Code == input$age)}
+    if(input$age != "All") {plot3 = plot3 %>% filter(Age == input$age)}
 
     if(input$gender != "All") {plot3 = plot3 %>% filter(Gender == input$gender)}
 
@@ -448,7 +448,7 @@ server <- function(input, output, session)
           {
             updateSelectInput(session, "disease", selected = "Chlamydia")
             updateSelectInput(session, "gender", selected = "Female")
-            updateSelectInput(session, "age", selected = "20-24")
+            updateSelectInput(session, "age", selected = "20-24 years")
             updateSliderInput(session, "year", value = 2014)
           })
 
