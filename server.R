@@ -15,11 +15,11 @@ server <- function(input, output, session)
   subpop <- reactive(
     {
       STD %>%
-        filter(Age == input$age | input$age == "All",
-               Gender == input$gender | input$gender == "All",
+        filter(Age     == input$age     | input$age     == "All",
+               Gender  == input$gender  | input$gender  == "All",
                Disease == input$disease | input$disease == "All")
     })
-  
+
   # Update the map according to the UI TODO: trigger the first time
   observe(
   {
@@ -31,9 +31,9 @@ server <- function(input, output, session)
       summarise(STD_Cases = sum(STD_Cases)) -> sampl
 
     populations %>%
-      filter(Age == input$age | input$age == "All",
+      filter(Age    == input$age    | input$age    == "All",
              Gender == input$gender | input$gender == "All",
-             Year == input$year) %>%
+             Year   == input$year) %>%
     group_by(State) %>%
     summarise(Population = sum(Population)) -> popl
 
@@ -69,27 +69,27 @@ server <- function(input, output, session)
     pal <- colorBin("YlOrRd", domain = tabl$Rate, bins = seq(0, 70, 10))
 
     leafletProxy("map") %>%
-      addPolygons(data = states,
-                  fillColor = ~ pal(tabl$Rate),
-                  weight = 1,
-                  opacity = 0.7,
-                  color = "grey",
-                  dashArray = "3",
+      addPolygons(data        = states,
+                  fillColor   = ~ pal(tabl$Rate),
+                  weight      = 1,
+                  opacity     = 0.7,
+                  color       = "grey",
+                  dashArray   = "3",
                   fillOpacity = 0.7,
-                  highlight = highlightOptions(weight = 5,
-                                               color = "#666",
-                                               dashArray = "",
-                                               fillOpacity = 0.85,
+                  highlight = highlightOptions(weight       = 5,
+                                               color        = "#666",
+                                               dashArray    = "",
+                                               fillOpacity  = 0.85,
                                                bringToFront = TRUE),
                   label = labels,
-                  labelOptions = labelOptions(style = list("font-weight" = "normal", padding = "3px 8px"),
-                                              textsize = "15px",
+                  labelOptions = labelOptions(style     = list("font-weight" = "normal", padding = "3px 8px"),
+                                              textsize  = "15px",
                                               direction = "auto")) %>%
     clearControls() %>%
-    addLegend(pal = pal,
-              values = tabl$Rate,
-              opacity = 0.85,
-              title = "for 1 000 inhabitants of the selected subpopulation",
+    addLegend(pal      = pal,
+              values   = tabl$Rate,
+              opacity  = 0.85,
+              title    = "for 1 000 inhabitants of the selected subpopulation",
               position = "bottomleft")
   })
 
@@ -122,18 +122,18 @@ server <- function(input, output, session)
       guides(color=guide_legend(""))
   })
 
-  # Create the risk table
+  # Create the risk table TODO: fix
   output$contingence <- renderDT(
   {
     #Building the contingence Table
     #Defining the first condition
     temp <- STD %>%
-      filter(Disease == input$OddsDisease,
-             Age == input$OddsAge,
-             Gender == input$OddsGender,
-             State == input$OddsState,
+      filter(Disease   == input$OddsDisease,
+             Age       == input$OddsAge,
+             Gender    == input$OddsGender,
+             State     == input$OddsState,
              Ethnicity == input$OddsEthnicity,
-             Year == input$OddsYear)
+             Year      == input$OddsYear)
 
     temp2 <- STD
 
@@ -207,27 +207,27 @@ server <- function(input, output, session)
                    lat2 = 10)
   })
 
-  # Update risk map for RR
+  # Update risk map for RR TODO: fix
   observeEvent(input$MapRRbutton,
   {
     allstateRR <- contingenceTB ()
-    difference <- tibble(Disease = "",
-                         State = setdiff(states$name,allstateRR$State),
-                         Year = 0,
-                         Ethnicity = "",
-                         Age ="",
-                         Age_Code = "",
-                         STD_Cases = 0,
-                         Population = 0,
-                         Gender = "",
-                         Gender_Code = "",
-                         nonDiseased = "",
-                         STDonPopulation = "",
+    difference <- tibble(Disease           = "",
+                         State             = setdiff(states$name,allstateRR$State),
+                         Year              = 0,
+                         Ethnicity         = "",
+                         Age               = "",
+                         Age_Code          = "",
+                         STD_Cases         = 0,
+                         Population        = 0,
+                         Gender            = "",
+                         Gender_Code       = "",
+                         nonDiseased       = "",
+                         STDonPopulation   = "",
                          ReferenceSTDonPop = "",
-                         RR = 0,
-                         STDonNon = "",
+                         RR                = 0,
+                         STDonNon          = "",
                          ReferenceSTDonNon = "",
-                         OR = 0)
+                         OR                = 0)
 
     #Fusionning the two data and ordering to use with the map
     allstateRR <- rbind(allstateRR, difference)
@@ -248,27 +248,27 @@ server <- function(input, output, session)
       lapply(htmltools::HTML)
 
     leafletProxy("map2") %>%
-      addPolygons(data = states,
-                  fillColor = ~pal(allstateRR$RR[2:53]),
-                  weight = 1,
-                  opacity = 0.7,
-                  color = "grey",
-                  dashArray = "3",
+      addPolygons(data        = states,
+                  fillColor   = ~pal(allstateRR$RR[2:53]),
+                  weight      = 1,
+                  opacity     = 0.7,
+                  color       = "grey",
+                  dashArray   = "3",
                   fillOpacity = 0.7,
-                  highlight = highlightOptions(weight = 5,
-                                               color = "#666",
-                                               dashArray = "",
-                                               fillOpacity = 0.85,
+                  highlight = highlightOptions(weight       = 5,
+                                               color        = "#666",
+                                               dashArray    = "",
+                                               fillOpacity  = 0.85,
                                                bringToFront = TRUE),
                   label = labels,
-                  labelOptions = labelOptions(style = list("font-weight" = "normal", padding = "3px 8px"),
-                                              textsize = "15px",
+                  labelOptions = labelOptions(style     = list("font-weight" = "normal", padding = "3px 8px"),
+                                              textsize  = "15px",
                                               direction = "auto")) %>%
     clearControls() %>%
-    addLegend(pal = pal,
-              values = allstateRR$RR[2:53],
-              opacity = 0.85,
-              title = "Risk Ratio",
+    addLegend(pal      = pal,
+              values   = allstateRR$RR[2:53],
+              opacity  = 0.85,
+              title    = "Risk Ratio",
               position = "bottomright")
   })
 
@@ -276,23 +276,23 @@ server <- function(input, output, session)
   observeEvent(input$MapORbutton,
   {
     allstateOR <- contingenceTB()
-    difference <- tibble(Disease = "",
-                         State = setdiff(states$name, allstateOR$State),
-                         Year = 0,
-                         Ethnicity = "",
-                         Age ="",
-                         Age_Code = "",
-                         STD_Cases = 0,
-                         Population = 0,
-                         Gender = "",
-                         Gender_Code = "",
-                         nonDiseased = "",
-                         STDonPopulation = "",
+    difference <- tibble(Disease           = "",
+                         State             = setdiff(states$name, allstateOR$State),
+                         Year              = 0,
+                         Ethnicity         = "",
+                         Age               ="",
+                         Age_Code          = "",
+                         STD_Cases         = 0,
+                         Population        = 0,
+                         Gender            = "",
+                         Gender_Code       = "",
+                         nonDiseased       = "",
+                         STDonPopulation   = "",
                          ReferenceSTDonPop = "",
-                         RR = 0,
-                         STDonNon = "",
+                         RR                = 0,
+                         STDonNon          = "",
                          ReferenceSTDonNon = "",
-                         OR = 0)
+                         OR                = 0)
 
     #Fusionning the two data and ordering to use with the map
     allstateOR <- rbind(allstateOR, difference)
@@ -313,27 +313,27 @@ server <- function(input, output, session)
       lapply(htmltools::HTML)
 
     leafletProxy("map2") %>%
-      addPolygons(data = states,
-                  fillColor = ~pal(allstateOR$OR[2:53]),
-                  weight = 1,
-                  opacity = 0.7,
-                  color = "grey",
-                  dashArray = "3",
+      addPolygons(data        = states,
+                  fillColor   = ~pal(allstateOR$OR[2:53]),
+                  weight      = 1,
+                  opacity     = 0.7,
+                  color       = "grey",
+                  dashArray   = "3",
                   fillOpacity = 0.7,
-                  highlight = highlightOptions(weight = 5,
-                                               color = "#666",
-                                               dashArray = "",
-                                               fillOpacity = 0.85,
+                  highlight = highlightOptions(weight       = 5,
+                                               color        = "#666",
+                                               dashArray    = "",
+                                               fillOpacity  = 0.85,
                                                bringToFront = TRUE),
                   label = labels,
-                  labelOptions = labelOptions( style = list("font-weight" = "normal", padding = "3px 8px"),
-                                              textsize = "15px",
+                  labelOptions = labelOptions(style     = list("font-weight" = "normal", padding = "3px 8px"),
+                                              textsize  = "15px",
                                               direction = "auto")) %>%
     clearControls() %>%
-    addLegend(pal = pal,
-              values = allstateOR$OR[2:53],
-              opacity = 0.85,
-              title = "Odds Ratio",
+    addLegend(pal      = pal,
+              values   = allstateOR$OR[2:53],
+              opacity  = 0.85,
+              title    = "Odds Ratio",
               position = "bottomright")
   })
 
@@ -343,7 +343,7 @@ server <- function(input, output, session)
     # Create training object
     STD %>%
       # Filter input
-      filter(State == input$statecurve | input$statecurve == "All",
+      filter(State   == input$statecurve   | input$statecurve   == "All",
              Disease == input$diseasecurve | input$diseasecurve == "All") %>%
       # Prepare for prophet
       group_by(Year) %>%
@@ -373,15 +373,15 @@ server <- function(input, output, session)
   {
     STD %>%
       mutate_if(is.character, factor)
-  }, 
+  },
   extensions = c("Buttons", "ColReorder", 'KeyTable'),
   filter = "top",
-  options = list(keys = TRUE,
+  options = list(keys       = TRUE,
                  colReorder = TRUE,
                  pageLength = 12,
-                 dom = "Bfrtip",
-                 buttons = c("copy", "csv", "pdf", I('colvis')),
-                 autoWidth = TRUE,
+                 dom        = "Bfrtip",
+                 buttons    = c("copy", "csv", "pdf", I('colvis')),
+                 autoWidth  = TRUE,
                  columnDefs = list(list(width = '200px', targets = "_all"))))
 
   # Create the presets
