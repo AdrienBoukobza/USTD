@@ -364,44 +364,34 @@ server <- function(input, output, session)
   })
 
   # Render the forecast curve
-  output$curve <- renderPlotly(
+  output$curve <- renderPlot(
   {
-    plot <- STD
+    # Create training object
+    STD %>%
+      # Filter input
+      filter(State == input$statecurve | input$statecurve == "All",
+             Disease == input$diseasecurve | input$diseasecurve == "All") %>%
+      # Prepare for prophet
+      group_by(Year) %>%
+      summarise(y = sum(STD_Cases)) %>%
+      mutate(Year = str_c(Year, "-01-01") %>% as.POSIXct) %>%
+      rename(ds = Year) %>%
+      # Augment the data with cubic spline interpolation
+      spline(n = 100, method = "natural") %>%
+      # Rebuild an usable dataframe
+      as.data.frame %>%
+      rename(ds = x) %>%
+      mutate(ds = ds %>% as.POSIXct(origin = "1970-01-01")) -> train
 
-    if (input$statecurve != "All")
-      plot <- plot %>% filter(State == input$statecurve)
+    # Train the model
+    train %>%
+      prophet -> model
 
-    if (input$diseasecurve != "All")
-      plot <- plot %>% filter(Disease == input$diseasecurve)
-
-    plot <- plot %>% group_by(Year) %>% summarise(sum(STD_Cases))
-
-    colnames(plot) <- c("ds", "y")
-    plot$ds <- paste(plot$ds, "-01-01", sep = "")
-    newplot <- prophet(plot)
-
-    future <- make_future_dataframe(newplot, periods= 10, freq='year')
-    forecast <- predict(newplot, future)
-
-    new_data <- forecast %>%
-      filter(ds >= as.Date('2014-12-31')) %>%
-      mutate(ds = as.Date(ds),
-             y = yhat)
-
-      to_plot <- plot %>% mutate(ds = as.Date(ds)) %>% bind_rows(new_data)
-
-      to_plot2 <- to_plot %>% filter(is.na (trend))
-
-      to_plot <- to_plot %>% filter(ds >"2014-01-01")
-
-      to_plot2 <- rbind(to_plot2, to_plot)
-
-      p <- ggplot(data = to_plot2, aes(x = ds, y = y, ymin = yhat_lower, ymax = yhat_upper)) +
-        geom_ribbon(alpha = 0.2) +
-        geom_line(color = "blue") +
-        xlab("Year") +
-        ylab("Number of cases") +
-        labs(title = "Prevision of evolution of number of cases")
+    # Predict the values
+    model %>%
+      predict(make_future_dataframe(., periods = 10, freq = "year")) %>%
+      # Plot the result
+      plot(model, .)
   })
 
   # Create the raw data DT
