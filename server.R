@@ -5,7 +5,7 @@ server <- function(input, output, session)
   # Create the first map leaftlet object
   output$map <- renderLeaflet(
   {
-    leaflet(states, options = leafletOptions(minZoom = 4, maxZoom = 7)) %>%
+    leaflet(options = leafletOptions(minZoom = 4, maxZoom = 7)) %>%
       setView(-96, 37.8, 4) %>%
       addTiles %>%
       setMaxBounds(lng1 = -0, lat1 = 80, lng2 = -180, lat2 = 10)
@@ -13,71 +13,73 @@ server <- function(input, output, session)
 
   # Reactive subpopulation object, common to map and prevalence curve
   subpop <- reactive(
-    {
-      STD %>%
-        filter(Age     == input$age     | input$age     == "All",
-               Gender  == input$gender  | input$gender  == "All",
-               Disease == input$disease | input$disease == "All")
-    })
+  {
+    STD %>%
+      filter(Age     == input$age     | input$age     == "All",
+             Gender  == input$gender  | input$gender  == "All",
+             Disease == input$disease | input$disease == "All")
+  })
+
+  populations <- reactive(
+  {
+    # Extract the population data only
+    STD %>%
+      select(State, Year, Ethnicity, Age, Gender, Population) %>%
+      distinct %>%
+      filter(Age     == input$age     | input$age     == "All",
+             Gender  == input$gender  | input$gender  == "All")
+  })
+
+  rates <- reactive(
+  {
+    req(subpop(), populations())
+
+    populations() %>%
+      group_by(State, Year) %>%
+      summarise(Population = sum(Population)) %>%
+      left_join(subpop() %>%
+                  group_by(State, Year) %>%
+                  summarise(STD_Cases = sum(STD_Cases))) %>%
+      mutate(Rate = 1000 * STD_Cases / Population)
+  })
+
+  legende <- reactive(
+  {
+    req(rates())
+
+    max(rates()$Rate, na.rm = T) -> maxrate
+
+    colorBin("YlOrRd", domain = c(0, maxrate), 9)
+  })
 
   # Update the map according to the UI
   observe(
   {
-    req(subpop())
-    if (input$navbar == "Interactive Map" | input$navbar != "Interactive Map")
-      subpop() %>%
-      filter(Year == input$year) %>%
-      group_by(State) %>%
-      summarise(STD_Cases = sum(STD_Cases)) -> sampl
+    req(rates(), legende(), input$navbar)
 
-    populations %>%
-      filter(Age    == input$age    | input$age    == "All",
-             Gender == input$gender | input$gender == "All",
-             Year   == input$year) %>%
-    group_by(State) %>%
-    summarise(Population = sum(Population)) -> popl
+    states %>%
+      left_join(rates() %>% filter(Year == input$year), by = c("name" = "State")) -> mapdata
 
-    popl %>%
-      left_join(sampl) %>%
-      mutate(Rate = 1000 * STD_Cases / Population) -> tabl
-
-    #Prevent to skip some states
-    difference <- tibble(setdiff(states$name, tabl$State),
-                        Population = 0,
-                        STD_Cases = 0,
-                        Rate = 0)
-    colnames(difference) <- c("State", "Population", "STD_Cases", "Rate")
-
-    tabl <- rbind(tabl, difference)
-    tabl <- tabl[order(match(tabl$State, states$name)), ]
-
-    #Preparing the labels
-
-    STD %>%
-      filter(Disease == input$disease | input$disease == "All",
-             Year    == input$year) %>%
-      group_by(Disease) -> meancountry
-
-    meancountrypop <- meancountry %>% summarise(Population = sum(Population))
-    meancountrypop <- as.numeric (meancountrypop[1, 2])
-
-    meancountrycases <- meancountry %>% summarise(STD_Cases = sum(STD_Cases))
-    meancountrycases <- as.numeric(meancountrycases[1, 2])
-
-    meancountry <- (meancountrycases * 1000 ) / meancountrypop
-
-    meancountry <- rep(meancountry, 52)
+    # Compute mean country rate
+    (1000 * 
+      (STD %>%
+        filter(Disease == input$disease | input$disease == "All",
+               Year    == input$year) %>%
+        summarise(STD_Cases = sum(STD_Cases)) %>%
+        pull(STD_Cases)) /
+      (populations() %>%
+        filter(Year == input$year) %>%
+        pull(Population) %>%
+        sum)) %>%
+    rep(52) -> meancountry
 
     labels <- sprintf("<strong>%s</strong><br/>%g cases in the state <br/>%g cases / 1000 hab<br/>Population: %.10g<br/>Country mean: %g",
-                      tabl$State, tabl$STD_Cases, tabl$Rate, tabl$Population, meancountry) %>%
+                     mapdata$name, mapdata$STD_Cases, mapdata$Rate, mapdata$Population, meancountry) %>%
       lapply(htmltools::HTML)
-
-    ## Legend palette
-    pal <- colorBin("YlOrRd", domain = tabl$Rate, bins = seq(0, max(tabl$Rate, na.rm = T), max(tabl$Rate, na.rm = T) / 9))
-
+    
     leafletProxy("map") %>%
-      addPolygons(data        = states,
-                  fillColor   = ~ pal(tabl$Rate),
+      addPolygons(data        = mapdata,
+                  fillColor   = ~ legende()(Rate),
                   weight      = 1,
                   opacity     = 0.7,
                   color       = "grey",
@@ -93,8 +95,8 @@ server <- function(input, output, session)
                                               textsize  = "15px",
                                               direction = "auto")) %>%
     clearControls() %>%
-    addLegend(pal      = pal,
-              values   = tabl$Rate,
+    addLegend(pal      = legende(),
+              values   = mapdata$Rate,
               opacity  = 0.85,
               title    = "for 1 000 inhabitants of the selected subpopulation",
               position = "bottomleft")
@@ -109,7 +111,7 @@ server <- function(input, output, session)
     subpop() %>%
     # Summarise by year
     group_by(Year) %>%
-    summarise(STD_Cases = sum(STD_Cases)) %>%
+    summarise(STD_Cases = sum(STD_Cases, na.rm = T)) %>%
     mutate(group = "Filtered cases") %>%
     # Add total population
     bind_rows(STD %>%
@@ -131,198 +133,171 @@ server <- function(input, output, session)
 
   output$curveincidence <- renderPlot(
     {
-      STD %>%
-        group_by(Year) %>%
-        summarise(STD_Cases = sum(STD_Cases, na.rm = TRUE)) %>%
-        mutate(group = "All cases",
-               prevSTD = c(0, STD_Cases[1:18]),
-               incidence = STD_Cases - prevSTD) %>%
-
-        # Plot
-        ggplot() +
-        aes(x = Year, y = incidence, color = group) +
-        geom_line() +
-        scale_y_log10() +
-        xlab ("Year") +
-        ylab ("Incidence of cases") +
-        labs(title = "Evolution of incidence of cases and filtered") +
-        theme(legend.position = "right") +
-        guides(color = guide_legend(""))
-    })
-
-  output$curveincidence2 <- renderPlot(
-    {
-      req(subpop())
-
-      # Select patients from UI
       subpop() %>%
-        # Summarise by year
         group_by(Year) %>%
-        summarise(STD_Cases = sum(STD_Cases, na.rm = TRUE)) %>%
-        mutate(group = "Filtered cases",
-               prevSTD = c(0, STD_Cases[1:18]),
-               incidence = STD_Cases - prevSTD) %>%
+        summarise(STD_Cases = sum(STD_Cases, na.rm = T)) %>%
+        mutate(STD_Cases = STD_Cases - lag(STD_Cases)) %>%
 
         # Plot
         ggplot() +
-        aes(x = Year, y = incidence, color = group) +
+        aes(x = Year, y = STD_Cases) +
         geom_line() +
         xlab ("Year") +
-        ylab ("Incidence of cases") +
+        ylab ("Incidence of filtered cases") +
         labs(title = "Evolution of incidence of filtered cases") +
         theme(legend.position = "right") +
-        scale_color_manual(values = c("#9999CC")) +
         guides(color = guide_legend(""))
     })
-  # Create the risk table TODO: fix (celui-là je m'en occuperai)
-  output$contingence <- renderDT(
-  {
-    #Building the contingence Table
-    #Defining the first condition
-    temp <- STD %>%
-      filter(Disease   == input$OddsDisease,
-             Age       == input$OddsAge,
-             Gender    == input$OddsGender,
-             State     == input$OddsState,
-             Ethnicity == input$OddsEthnicity,
-             Year      == input$OddsYear)
 
-    temp2 <- STD
+  ## Create the risk table TODO: fix (celui-là je m'en occuperai)
+  #output$contingence <- renderDT(
+  #{
+  #  #Building the contingence Table
+  #  #Defining the first condition
+  #  temp <- STD %>%
+  #    filter(Disease   == input$OddsDisease,
+  #           Age       == input$OddsAge,
+  #           Gender    == input$OddsGender,
+  #           State     == input$OddsState,
+  #           Ethnicity == input$OddsEthnicity,
+  #           Year      == input$OddsYear)
 
-    #Defining the second condition
+  #  temp2 <- STD
 
-    # if (input$Factor == "Disease")
-    #   temp2 <- temp2 %>% filter(Disease == input$Comparison)
-    # else
-    #   temp2 <- temp2 %>% filter(Disease == input$OddsDisease)
+  #  #Defining the second condition
 
-    # if (input$Factor == "Age")
-    #   temp2 <- temp2 %>% filter(Age == input$Comparison)
-    # else
-    #   temp2 <- temp2 %>% filter(Age == input$OddsAge)
+  #  # if (input$Factor == "Disease")
+  #  #   temp2 <- temp2 %>% filter(Disease == input$Comparison)
+  #  # else
+  #  #   temp2 <- temp2 %>% filter(Disease == input$OddsDisease)
 
-    # if (input$Factor == "Gender")
-    #   temp2 <- temp2 %>% filter(Gender == input$Comparison)
-    # else
-    #   temp2 <- temp2 %>% filter(Gender == input$OddsGender)
+  #  # if (input$Factor == "Age")
+  #  #   temp2 <- temp2 %>% filter(Age == input$Comparison)
+  #  # else
+  #  #   temp2 <- temp2 %>% filter(Age == input$OddsAge)
 
-    # if (input$Factor == "Ethnicity")
-    #   temp2 <- temp2 %>% filter(Ethnicity == input$Comparison)
-    # else
-    #   temp2 <- temp2 %>% filter(Ethnicity== input$OddsEthnicity)
+  #  # if (input$Factor == "Gender")
+  #  #   temp2 <- temp2 %>% filter(Gender == input$Comparison)
+  #  # else
+  #  #   temp2 <- temp2 %>% filter(Gender == input$OddsGender)
 
-    # if (input$Factor == "Year")
-    #   temp2 <- temp2 %>% filter(Year == input$Comparison)
-    # else
-    #   temp2 <- temp2 %>% filter(Year == input$OddsYear)
+  #  # if (input$Factor == "Ethnicity")
+  #  #   temp2 <- temp2 %>% filter(Ethnicity == input$Comparison)
+  #  # else
+  #  #   temp2 <- temp2 %>% filter(Ethnicity== input$OddsEthnicity)
 
-    if (is.na(as.numeric(temp[1, 7])))
-    {
-      temp[1, 7] <- 0
-      temp[1, 1] <- input$OddsDisease
-      temp[1, 2] <- input$OddsState
-      temp[1, 3] <- input$OddsYear
-      temp[1, 4] <- input$OddsEthnicity
-      temp[1, 6] <- input$OddsAge
-      temp[1, 9] <- input$OddsGender
-      temp[1, 8] <- 0
-    }
+  #  # if (input$Factor == "Year")
+  #  #   temp2 <- temp2 %>% filter(Year == input$Comparison)
+  #  # else
+  #  #   temp2 <- temp2 %>% filter(Year == input$OddsYear)
 
-    temp <- rbind(temp, temp2)
-    STDCondition <- temp[1, 7]
-    PopulationCondition <- temp[1, 8]
+  #  if (is.na(as.numeric(temp[1, 7])))
+  #  {
+  #    temp[1, 7] <- 0
+  #    temp[1, 1] <- input$OddsDisease
+  #    temp[1, 2] <- input$OddsState
+  #    temp[1, 3] <- input$OddsYear
+  #    temp[1, 4] <- input$OddsEthnicity
+  #    temp[1, 6] <- input$OddsAge
+  #    temp[1, 9] <- input$OddsGender
+  #    temp[1, 8] <- 0
+  #  }
 
-    #Generating the RR
-    temp <- temp %>% mutate(nonDiseased = Population - STD_Cases)
-    temp <- temp %>% mutate(STDonPopulation = STD_Cases / Population)
-    temp <- temp %>% mutate(ReferenceSTDonPop = as.numeric(STDCondition / PopulationCondition))
-    temp <- temp %>% mutate (RR = as.numeric(ReferenceSTDonPop / STDonPopulation))
+  #  temp <- rbind(temp, temp2)
+  #  STDCondition <- temp[1, 7]
+  #  PopulationCondition <- temp[1, 8]
 
-    NonDiseased <- temp[1, 11]
-    #Generating the OR
-    temp <- temp %>% mutate(STDonNon = STD_Cases / nonDiseased)
-    temp <- temp %>% mutate (ReferenceSTDonNon = as.numeric(STDCondition / NonDiseased))
-    temp <- temp %>% mutate(OR = as.numeric (ReferenceSTDonNon / STDonNon))
+  #  #Generating the RR
+  #  temp <- temp %>% mutate(nonDiseased = Population - STD_Cases)
+  #  temp <- temp %>% mutate(STDonPopulation = STD_Cases / Population)
+  #  temp <- temp %>% mutate(ReferenceSTDonPop = as.numeric(STDCondition / PopulationCondition))
+  #  temp <- temp %>% mutate (RR = as.numeric(ReferenceSTDonPop / STDonPopulation))
 
-    temp
-  })
+  #  NonDiseased <- temp[1, 11]
+  #  #Generating the OR
+  #  temp <- temp %>% mutate(STDonNon = STD_Cases / nonDiseased)
+  #  temp <- temp %>% mutate (ReferenceSTDonNon = as.numeric(STDCondition / NonDiseased))
+  #  temp <- temp %>% mutate(OR = as.numeric (ReferenceSTDonNon / STDonNon))
 
-  # Create the risk map object
-  output$map2 <- renderLeaflet(
-  {
-    leaflet(states, options = leafletOptions(minZoom = 4, maxZoom = 7)) %>%
-      setView(-96, 37.8, 4) %>%
-      addTiles %>%
-      setMaxBounds(lng1 = -0,
-                   lat1 = 80,
-                   lng2 = -180,
-                   lat2 = 10)
-  })
+  #  temp
+  #})
 
-  # Update risk map for RR TODO: fix
-  observeEvent(input$MapRRbutton,
-  {
-    allstateRR <- contingenceTB ()
-    difference <- tibble(Disease           = "",
-                         State             = setdiff(states$name, allstateRR$State),
-                         Year              = 0,
-                         Ethnicity         = "",
-                         Age               = "",
-                         Age_Code          = "",
-                         STD_Cases         = 0,
-                         Population        = 0,
-                         Gender            = "",
-                         Gender_Code       = "",
-                         nonDiseased       = "",
-                         STDonPopulation   = "",
-                         ReferenceSTDonPop = "",
-                         RR                = 0,
-                         STDonNon          = "",
-                         ReferenceSTDonNon = "",
-                         OR                = 0)
+  ## Create the risk map object
+  #output$map2 <- renderLeaflet(
+  #{
+  #  leaflet(options = leafletOptions(minZoom = 4, maxZoom = 7)) %>%
+  #    setView(-96, 37.8, 4) %>%
+  #    addTiles %>%
+  #    setMaxBounds(lng1 = -0,
+  #                 lat1 = 80,
+  #                 lng2 = -180,
+  #                 lat2 = 10)
+  #})
 
-    #Fusionning the two data and ordering to use with the map
-    allstateRR <- rbind(allstateRR, difference)
-    allstateRR <- allstateRR[order(match(allstateRR$State, states$name)), ]
+  ## Update risk map for RR TODO: fix
+  #observeEvent(input$MapRRbutton,
+  #{
+  #  allstateRR <- contingenceTB ()
+  #  difference <- tibble(Disease           = "",
+  #                       State             = setdiff(states$name, allstateRR$State),
+  #                       Year              = 0,
+  #                       Ethnicity         = "",
+  #                       Age               = "",
+  #                       Age_Code          = "",
+  #                       STD_Cases         = 0,
+  #                       Population        = 0,
+  #                       Gender            = "",
+  #                       Gender_Code       = "",
+  #                       nonDiseased       = "",
+  #                       STDonPopulation   = "",
+  #                       ReferenceSTDonPop = "",
+  #                       RR                = 0,
+  #                       STDonNon          = "",
+  #                       ReferenceSTDonNon = "",
+  #                       OR                = 0)
 
-    total <- STD %>% group_by(State) %>% summarise(sum(Population))
-    difference <- tibble(State = setdiff(states$name, total$State), `sum(Population)` = 0)
-    total <- rbind(total, difference)
+  #  #Fusionning the two data and ordering to use with the map
+  #  allstateRR <- rbind(allstateRR, difference)
+  #  allstateRR <- allstateRR[order(match(allstateRR$State, states$name)), ]
 
-    ## Preparing the legend
-    legendRow <- seq(0, 54, 6)
+  #  total <- STD %>% group_by(State) %>% summarise(sum(Population))
+  #  difference <- tibble(State = setdiff(states$name, total$State), `sum(Population)` = 0)
+  #  total <- rbind(total, difference)
 
-    bins <- legendRow
-    pal <- colorBin("YlGnBu", domain = allstateRR$RR[2:53], bins = bins)
+  #  ## Preparing the legend
+  #  legendRow <- seq(0, 54, 6)
 
-    labels <- sprintf("<strong>%s</strong><br/>Multiplication chances: %g ",
-                      states$name, allstateRR$RR[2:53]) %>%
-      lapply(htmltools::HTML)
+  #  bins <- legendRow
+  #  pal <- colorBin("YlGnBu", domain = allstateRR$RR[2:53], bins = bins)
 
-    leafletProxy("map2") %>%
-      addPolygons(data        = states,
-                  fillColor   = ~pal(allstateRR$RR[2:53]),
-                  weight      = 1,
-                  opacity     = 0.7,
-                  color       = "grey",
-                  dashArray   = "3",
-                  fillOpacity = 0.7,
-                  highlight = highlightOptions(weight       = 5,
-                                               color        = "#666",
-                                               dashArray    = "",
-                                               fillOpacity  = 0.85,
-                                               bringToFront = TRUE),
-                  label = labels,
-                  labelOptions = labelOptions(style     = list("font-weight" = "normal", padding = "3px 8px"),
-                                              textsize  = "15px",
-                                              direction = "auto")) %>%
-    clearControls() %>%
-    addLegend(pal      = pal,
-              values   = allstateRR$RR[2:53],
-              opacity  = 0.85,
-              title    = "Risk Ratio",
-              position = "bottomright")
-  })
+  #  labels <- sprintf("<strong>%s</strong><br/>Multiplication chances: %g ",
+  #                    states$name, allstateRR$RR[2:53]) %>%
+  #    lapply(htmltools::HTML)
+
+  #  leafletProxy("map2") %>%
+  #    addPolygons(data        = states,
+  #                fillColor   = ~pal(allstateRR$RR[2:53]),
+  #                weight      = 1,
+  #                opacity     = 0.7,
+  #                color       = "grey",
+  #                dashArray   = "3",
+  #                fillOpacity = 0.7,
+  #                highlight = highlightOptions(weight       = 5,
+  #                                             color        = "#666",
+  #                                             dashArray    = "",
+  #                                             fillOpacity  = 0.85,
+  #                                             bringToFront = TRUE),
+  #                label = labels,
+  #                labelOptions = labelOptions(style     = list("font-weight" = "normal", padding = "3px 8px"),
+  #                                            textsize  = "15px",
+  #                                            direction = "auto")) %>%
+  #  clearControls() %>%
+  #  addLegend(pal      = pal,
+  #            values   = allstateRR$RR[2:53],
+  #            opacity  = 0.85,
+  #            title    = "Risk Ratio",
+  #            position = "bottomright")
+  #})
 
   # Render the forecast curve
   output$curve <- renderDygraph(

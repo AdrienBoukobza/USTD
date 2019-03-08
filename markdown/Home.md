@@ -12,11 +12,6 @@ Each state is shaded according to the density of the disease of interest in the 
 The second tool is a **simple forecast** of the number of cases for any combination of disease and state.  
 The forecast is provided using the `prophet` package from facebook research (https://facebook.github.io/prophet/)
 
-### Risk calculator
-
-The third tool is a **risk comparator** to calculate the risk ratios between a reference population and ones differing on one parameter.  
-The risks are also displayed on a map, between the reference population and the same population in all other states.
-
 ### Data explorer
 
 The **raw data** used in this application is also provided.

@@ -15,16 +15,19 @@ library(dygraphs)
 options(scipen = 999)
 
 # Load states boundaries and reorder alphabetically
-us_states() %>%
-  arrange(name) -> states
+us_states() -> states
 
 # Load CDC data
-STD = readRDS("data/STD.rds") %>% rename(Ethnicity = `Race/Ethnicity`)
-
-# Extract the population data only
-STD %>%
-  select(State, Year, Ethnicity, Age, Gender, Population) %>%
-  distinct -> populations
+readRDS("data/STD.rds") %>%
+  select(Disease,
+         State,
+         Year,
+         Ethnicity = `Race/Ethnicity`,
+         Age,
+         STD_Cases,
+         Gender,
+         Population) %>%
+  filter(Ethnicity != "Race Suppressed") -> STD
 
 # Create indexes for the selectors
 STD %>%
@@ -34,7 +37,3 @@ STD %>%
 # Function to add "All" to a vector
 andAll <- function(x)
   c("All", x)
-
-
-
-

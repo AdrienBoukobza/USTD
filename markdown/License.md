@@ -2,7 +2,7 @@
 
 **USTD**, a shiny application for visualizing US STDs epidemiology
 
-_Copyright (C) 2019 Adrien Boukobza & François-Xavier Durand_
+_Copyright (C) 2019 Adrien Boukobza, François-Xavier Durand & Maxime Wack_
 
 This work is published under the GNU General Public License version 3 (https://www.gnu.org/licenses/gpl.html)
 
