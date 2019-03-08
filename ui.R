@@ -34,7 +34,7 @@ STDMap <- tabPanel("Interactive Map",
 CurveExplorer <- tabPanel("Curve Explorer",
                           selectInput("statecurve", "State", selectVars$State %>% andAll),
                           selectInput("diseasecurve", "Disease", selectVars$Disease %>% andAll),
-                          withLoader(dygraphOutput("curve",width = "70%", height = "600px"), type = 'html', loader = "dnaspin"))
+                          withLoader(dygraphOutput("curve", width = "70%", height = "600px"), type = 'html', loader = "dnaspin"))
 
 RiskCalculator <- tabPanel("Risk calculator",
                            fluidRow(h2("Comparative beetween the different States", align = "center"),
@@ -49,10 +49,10 @@ RiskCalculator <- tabPanel("Risk calculator",
                                            selectInput('OddsYear', "Year", c(1996:2014))),
                                     column(4,
                                            h3("Compare by"),
-                                           selectInput("Factor","Factor",c("Disease", "Gender", "Ethnicity", "Age", "Year")))),
+                                           selectInput("Factor", "Factor", c("Disease", "Gender", "Ethnicity", "Age", "Year")))),
                            DTOutput("contingence"),
                            fluidRow(column(1,
-                                           offset =5,
+                                           offset = 5,
                                            actionButton("MapRRbutton", "Rendering map with RR"))),
                            leafletOutput("map2", width = "100%", height = "700"))
 

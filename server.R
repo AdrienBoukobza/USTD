@@ -24,7 +24,7 @@ server <- function(input, output, session)
   observe(
   {
     req(subpop())
-    if(input$navbar == "Interactive Map" | input$navbar != "Interactive Map")
+    if (input$navbar == "Interactive Map" | input$navbar != "Interactive Map")
       subpop() %>%
       filter(Year == input$year) %>%
       group_by(State) %>%
@@ -40,39 +40,40 @@ server <- function(input, output, session)
     popl %>%
       left_join(sampl) %>%
       mutate(Rate = 1000 * STD_Cases / Population) -> tabl
-    
+
     #Prevent to skip some states
-    difference = tibble(setdiff(states$name, tabl$State),
+    difference <- tibble(setdiff(states$name, tabl$State),
                         Population = 0,
                         STD_Cases = 0,
                         Rate = 0)
-    colnames(difference) = c("State", "Population", "STD_Cases", "Rate")
-    
-    tabl = rbind(tabl, difference)
-    tabl = tabl[order(match(tabl$State, states$name)),]
+    colnames(difference) <- c("State", "Population", "STD_Cases", "Rate")
+
+    tabl <- rbind(tabl, difference)
+    tabl <- tabl[order(match(tabl$State, states$name)), ]
 
     #Preparing the labels
-    
-    STD %>% filter(Disease == input$disease | input$disease == "All",
-                   Year    == input$year) %>% 
-    group_by(Disease)-> meancountry
+
+    STD %>%
+      filter(Disease == input$disease | input$disease == "All",
+             Year    == input$year) %>%
+      group_by(Disease) -> meancountry
 
     meancountrypop <- meancountry %>% summarise(Population = sum(Population))
-    meancountrypop <- as.numeric (meancountrypop[1,2])
+    meancountrypop <- as.numeric (meancountrypop[1, 2])
 
     meancountrycases <- meancountry %>% summarise(STD_Cases = sum(STD_Cases))
-    meancountrycases <- as.numeric(meancountrycases[1,2])
+    meancountrycases <- as.numeric(meancountrycases[1, 2])
 
     meancountry <- (meancountrycases * 1000 ) / meancountrypop
 
     meancountry <- rep(meancountry, 52)
-    
+
     labels <- sprintf("<strong>%s</strong><br/>%g cases in the state <br/>%g cases / 1000 hab<br/>Population: %.10g<br/>Country mean: %g",
                       tabl$State, tabl$STD_Cases, tabl$Rate, tabl$Population, meancountry) %>%
       lapply(htmltools::HTML)
-    
+
     ## Legend palette
-    pal <- colorBin("YlOrRd", domain = tabl$Rate, bins = seq(0, max(tabl$Rate,na.rm=T), max(tabl$Rate, na.rm = T)/9))
+    pal <- colorBin("YlOrRd", domain = tabl$Rate, bins = seq(0, max(tabl$Rate, na.rm = T), max(tabl$Rate, na.rm = T) / 9))
 
     leafletProxy("map") %>%
       addPolygons(data        = states,
@@ -125,17 +126,17 @@ server <- function(input, output, session)
       ylab ("Number of cases") +
       labs(title = "Evolution of total number of cases and filtered") +
       theme(legend.position = "right") +
-      guides(color=guide_legend(""))
+      guides(color = guide_legend(""))
   })
-  
+
   output$curveincidence <- renderPlot(
     {
       STD %>%
         group_by(Year) %>%
         summarise(STD_Cases = sum(STD_Cases, na.rm = TRUE)) %>%
         mutate(group = "All cases",
-               prevSTD = c(0,STD_Cases[1:18]),
-               incidence = STD_Cases - prevSTD) %>% 
+               prevSTD = c(0, STD_Cases[1:18]),
+               incidence = STD_Cases - prevSTD) %>%
 
         # Plot
         ggplot() +
@@ -146,22 +147,22 @@ server <- function(input, output, session)
         ylab ("Incidence of cases") +
         labs(title = "Evolution of incidence of cases and filtered") +
         theme(legend.position = "right") +
-        guides(color=guide_legend(""))
+        guides(color = guide_legend(""))
     })
-  
+
   output$curveincidence2 <- renderPlot(
     {
       req(subpop())
-      
+
       # Select patients from UI
       subpop() %>%
         # Summarise by year
         group_by(Year) %>%
         summarise(STD_Cases = sum(STD_Cases, na.rm = TRUE)) %>%
         mutate(group = "Filtered cases",
-               prevSTD = c(0,STD_Cases[1:18]),
-               incidence = STD_Cases - prevSTD) %>% 
-        
+               prevSTD = c(0, STD_Cases[1:18]),
+               incidence = STD_Cases - prevSTD) %>%
+
         # Plot
         ggplot() +
         aes(x = Year, y = incidence, color = group) +
@@ -170,8 +171,8 @@ server <- function(input, output, session)
         ylab ("Incidence of cases") +
         labs(title = "Evolution of incidence of filtered cases") +
         theme(legend.position = "right") +
-        scale_color_manual(values=c("#9999CC"))+
-        guides(color=guide_legend(""))
+        scale_color_manual(values = c("#9999CC")) +
+        guides(color = guide_legend(""))
     })
   # Create the risk table TODO: fix (celui-là je m'en occuperai)
   output$contingence <- renderDT(
@@ -217,14 +218,14 @@ server <- function(input, output, session)
 
     if (is.na(as.numeric(temp[1, 7])))
     {
-      temp[1,7] <- 0
-      temp[1,1] <- input$OddsDisease
-      temp[1,2] <- input$OddsState
-      temp[1,3] <- input$OddsYear
-      temp[1,4] <- input$OddsEthnicity
-      temp[1,6] <- input$OddsAge
-      temp[1,9] <- input$OddsGender
-      temp[1,8] <- 0
+      temp[1, 7] <- 0
+      temp[1, 1] <- input$OddsDisease
+      temp[1, 2] <- input$OddsState
+      temp[1, 3] <- input$OddsYear
+      temp[1, 4] <- input$OddsEthnicity
+      temp[1, 6] <- input$OddsAge
+      temp[1, 9] <- input$OddsGender
+      temp[1, 8] <- 0
     }
 
     temp <- rbind(temp, temp2)
@@ -233,11 +234,11 @@ server <- function(input, output, session)
 
     #Generating the RR
     temp <- temp %>% mutate(nonDiseased = Population - STD_Cases)
-    temp<- temp %>% mutate(STDonPopulation = STD_Cases / Population)
+    temp <- temp %>% mutate(STDonPopulation = STD_Cases / Population)
     temp <- temp %>% mutate(ReferenceSTDonPop = as.numeric(STDCondition / PopulationCondition))
     temp <- temp %>% mutate (RR = as.numeric(ReferenceSTDonPop / STDonPopulation))
 
-    NonDiseased <- temp[1, 11] 
+    NonDiseased <- temp[1, 11]
     #Generating the OR
     temp <- temp %>% mutate(STDonNon = STD_Cases / nonDiseased)
     temp <- temp %>% mutate (ReferenceSTDonNon = as.numeric(STDCondition / NonDiseased))
@@ -263,7 +264,7 @@ server <- function(input, output, session)
   {
     allstateRR <- contingenceTB ()
     difference <- tibble(Disease           = "",
-                         State             = setdiff(states$name,allstateRR$State),
+                         State             = setdiff(states$name, allstateRR$State),
                          Year              = 0,
                          Ethnicity         = "",
                          Age               = "",
@@ -282,10 +283,10 @@ server <- function(input, output, session)
 
     #Fusionning the two data and ordering to use with the map
     allstateRR <- rbind(allstateRR, difference)
-    allstateRR <- allstateRR[order(match(allstateRR$State, states$name)),]
+    allstateRR <- allstateRR[order(match(allstateRR$State, states$name)), ]
 
-    total <- STD %>% group_by(State) %>% summarise (sum(Population))
-    difference <- tibble(State = setdiff(states$name,total$State), `sum(Population)` = 0)
+    total <- STD %>% group_by(State) %>% summarise(sum(Population))
+    difference <- tibble(State = setdiff(states$name, total$State), `sum(Population)` = 0)
     total <- rbind(total, difference)
 
     ## Preparing the legend
