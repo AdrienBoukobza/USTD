@@ -5,7 +5,7 @@ server <- function(input, output, session)
   # Create the first map leaftlet object
   output$map <- renderLeaflet(
   {
-    leaflet(options = leafletOptions(minZoom = 4, maxZoom = 7)) %>%
+    leaflet(data = states, options = leafletOptions(minZoom = 4, maxZoom = 7)) %>%
       setView(-96, 37.8, 4) %>%
       addTiles %>%
       setMaxBounds(lng1 = -0, lat1 = 80, lng2 = -180, lat2 = 10)
@@ -61,7 +61,7 @@ server <- function(input, output, session)
       left_join(rates() %>% filter(Year == input$year), by = c("name" = "State")) -> mapdata
 
     # Compute mean country rate
-    (1000 * 
+    (1000 *
       (STD %>%
         filter(Disease == input$disease | input$disease == "All",
                Year    == input$year) %>%
@@ -76,10 +76,10 @@ server <- function(input, output, session)
     labels <- sprintf("<strong>%s</strong><br/>%g cases in the state <br/>%g cases / 1000 hab<br/>Population: %.10g<br/>Country mean: %g",
                      mapdata$name, mapdata$STD_Cases, mapdata$Rate, mapdata$Population, meancountry) %>%
       lapply(htmltools::HTML)
-    
+
     leafletProxy("map") %>%
-      addPolygons(data        = mapdata,
-                  fillColor   = ~ legende()(Rate),
+      addPolygons(data        = states,
+                  fillColor   = ~ legende()(mapdata$Rate),
                   weight      = 1,
                   opacity     = 0.7,
                   color       = "grey",
